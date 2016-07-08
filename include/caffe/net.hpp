@@ -47,7 +47,7 @@ class Net {
     return Forward(loss);
   }
 
-  inline vector<shared_ptr<Layer<Dtype> > >& const getlayers(){
+  inline vector<shared_ptr<Layer<Dtype> > >&  getlayers(){
 	  return layers_;
   }
 
