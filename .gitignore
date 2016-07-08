@@ -101,3 +101,5 @@ MANIFEST-*
 *.opensdf
 *.pdb
 #*.props
+
+log/
