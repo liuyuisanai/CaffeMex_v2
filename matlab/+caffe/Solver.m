@@ -4,6 +4,7 @@ classdef Solver < handle
   properties (Access = private)
     hSolver_self
     attributes
+    gpu_ids
     % attribute fields
     %     hNet_net
     %     hNet_test_nets
@@ -16,13 +17,14 @@ classdef Solver < handle
   methods
     function self = Solver(varargin)
       % decide whether to construct a solver from solver_file or handle
-      if ~(nargin == 1 && isstruct(varargin{1}))
+      if ~(nargin == 2 && isstruct(varargin{1}))
         % construct a solver from solver_file
-        self = caffe.get_solver(varargin{:});
+        self = caffe.get_solver(varargin{1}, varargin{2});
         return
       end
       % construct a solver from handle
       hSolver_solver = varargin{1};
+      self.gpu_ids = varargin{2};
       CHECK(is_valid_handle(hSolver_solver), 'invalid Solver handle');
       
       % setup self handle and attributes
@@ -30,11 +32,14 @@ classdef Solver < handle
       self.attributes = caffe_('solver_get_attr', self.hSolver_self);
       
       % setup net and test_nets
-      self.nets = caffe.Net(self.attributes.hNet_net);
-      self.test_nets = caffe.Net.empty();
-      for n = 1:length(self.attributes.hNet_test_nets)
-        self.test_nets(n) = caffe.Net(self.attributes.hNet_test_nets(n));
+      for i = 1 : length(self.gpu_ids)
+        self.nets{i} = caffe.Net(self.attributes{i}.hNet_net);
+        self.test_nets = caffe.Net.empty();
+        for n = 1:length(self.attributes{i}.hNet_test_nets)
+          self.test_nets{i}(n) = caffe.Net(self.attributes{i}.hNet_test_nets(n));
+        end
       end
+      
     end
     function iter = iter(self)
       iter = caffe_('solver_get_iter', self.hSolver_self);
