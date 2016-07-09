@@ -280,8 +280,8 @@ void P2PSync<Dtype>::InternalThreadEntry() {
     Caffe::set_random_seed(
         solver_->param().random_seed() + solver_->param().device_id());
   }
-  //solver_->Step(solver_->param().max_iter() - initial_iter_);
-  solver_->Step(1);
+  solver_->Step(solver_->param().max_iter() - initial_iter_);
+  //solver_->Step(1);
 }
 
 template<typename Dtype>
@@ -297,7 +297,13 @@ void P2PSync<Dtype>::on_start() {
 
   // Wait for update from parent
   if (parent_) {
+#ifdef _WIN32
     P2PSync<Dtype> *parent = queue_.pop();
+#else
+	P2PSync<Dtype> *parent = NULL;
+	while ( !queue_.try_pop(&parent) )
+		;
+#endif
     CHECK(parent == parent_);
   }
 
@@ -333,7 +339,14 @@ void P2PSync<Dtype>::on_gradients_ready() {
 
   // Sum children gradients as they appear in the queue
   for (int i = 0; i < children_.size(); ++i) {
-    P2PSync<Dtype> *child = queue_.pop();
+#ifdef _WIN32
+	  P2PSync<Dtype> *child = queue_.pop();
+	  ;
+#else
+	  P2PSync<Dtype> *child = NULL;
+	  while ( !queue_.try_pop(&child) )
+		  ;
+#endif
     Dtype* src = child->parent_grads_;
     Dtype* dst = diff_;
 

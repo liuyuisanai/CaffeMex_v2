@@ -437,36 +437,36 @@ static void solver_step(MEX_ARGS) {
   now_solver_ = handle_to_ID(prhs[ 0 ]);
   do_set_phase(TRAIN);
   int iters = mxGetScalar(prhs[ 1 ]);
-  for ( int t = 0; t < iters; t++ ){
-	  for ( int i = 1; i < int(gpu_groups_[ now_solver_ ].size()); ++i ) {
-		  syncSolvers_[ now_solver_ ]->workers()[ i ]->StartInternalThread();
+  //for ( int t = 0; t < iters; t++ ){
+	 // for ( int i = 1; i < int(gpu_groups_[ now_solver_ ].size()); ++i ) {
+		//  syncSolvers_[ now_solver_ ]->workers()[ i ]->StartInternalThread();
+	 // }
+
+	 // // Run root solver on current thread
+	 // syncSolvers_[ now_solver_ ]->solver()->Step(1);
+
+	 // for ( int i = 1; i < int(gpu_groups_[ now_solver_ ].size()); ++i ) {
+		//  syncSolvers_[ now_solver_ ]->workers()[ i ]->StopInternalThread();
+	 // }
+  //}
+#pragma omp parallel num_threads(int(gpu_groups_[now_solver_].size())) 
+  {
+	  int ID = omp_get_thread_num();
+	  if ( ID == 0 ){
+#ifdef DEBUG
+		  LOG(INFO) << "Card " << ID << " at point 0\n";
+		  ::google::FlushLogFiles(0);
+#endif
+		 syncSolvers_[ now_solver_ ]->solver()->Step(iters);
 	  }
-
-	  // Run root solver on current thread
-	  syncSolvers_[ now_solver_ ]->solver()->Step(1);
-
-	  for ( int i = 1; i < int(gpu_groups_[ now_solver_ ].size()); ++i ) {
-		  syncSolvers_[ now_solver_ ]->workers()[ i ]->StopInternalThread();
+	  else{
+#ifdef DEBUG
+		  LOG(INFO) << "Card " << ID << " at point 0\n";
+		  ::google::FlushLogFiles(0);
+#endif
+		 syncSolvers_[ now_solver_ ]->workers()[ ID ]->solver()->Step(iters);
 	  }
   }
-//#pragma omp parallel num_threads(int(gpu_groups_[now_solver_].size())) 
-//  {
-//	  int ID = omp_get_thread_num();
-//	  if ( ID == 0 ){
-//#ifdef DEBUG
-//		  LOG(INFO) << "Card " << ID << " at point 0\n";
-//		  ::google::FlushLogFiles(0);
-//#endif
-//		 syncSolvers_[ now_solver_ ]->solver()->Step(iters);
-//	  }
-//	  else{
-//#ifdef DEBUG
-//		  LOG(INFO) << "Card " << ID << " at point 0\n";
-//		  ::google::FlushLogFiles(0);
-//#endif
-//		 syncSolvers_[ now_solver_ ]->workers()[ ID ]->solver()->Step(iters);
-//	  }
-//  }
 }
 
 // Usage: caffe_('get_net', model_file, phase_name)
