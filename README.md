@@ -1,61 +1,26 @@
-# Caffe branch for R-FCN
+# CaffeMex 
+v2.0 beta1: 
 
-This is a branch of Caffe supporting [**R-FCN**](https://github.com/daijifeng001/R-FCN), which has been tested under Windows (Windows 7, 8, Server 2012 R2) and Linux (Ubuntu 14.04).
+A multiple-GPU version of MATLAB Caffe on LINUX and WINDOWS
 
-## Linux Setup
+For now it is an unstable version
 
-### Pre-Build Steps
+Bug report: liuyu@sensetime.com
+## Installation for LINUX
 
-Copy `Makefile.config.example` to `Makefile.config`
+1.cp Makefile.config.example Makefile.config and customize your own config.
 
-We need to modify Makefile.config to specify some software PATHS, you may view my [Makefile.config](https://www.dropbox.com/s/kbrxkiq8ltb3z2q/Makefile.config?dl=0) for reference.
+2.make -j && make matcaffe
+## Installation for WINDOWS
 
-### CUDA
-Download `CUDA Toolkit 7.5` [from nVidia website](https://developer.nvidia.com/cuda-toolkit).
+1.Find 'windows/' and you will know.
+## Feature
 
-### Matlab
-Uncomment ```MATLAB_DIR``` and set ```MATLAB_DIR``` accordingly to build Caffe Matlab wrapper. Matlab 2014a and later versions are supported.
+1.Support both windows and linux platforms
 
-### cuDNN (optional)
-For cuDNN acceleration using NVIDIA’s proprietary cuDNN software, uncomment the ```USE_CUDNN := 1``` switch in Makefile.config. cuDNN is sometimes but not always faster than Caffe’s GPU acceleration.
+2.Support R-FCN
 
-Download `cuDNN v3` or `cuDNN v4` [from nVidia website](https://developer.nvidia.com/cudnn). And unpack downloaded zip to $CUDA_PATH (It typically would be /usr/local/cuda/include and /usr/local/cuda/lib64).
+3.Lastest Matlab interface
 
-### Build
-
-Simply type
-```
-make -j8 && make matcaffe
-```
-
-## Windows Setup
-**Requirements**: Visual Studio 2013
-
-### Pre-Build Steps
-Copy `.\windows\CommonSettings.props.example` to `.\windows\CommonSettings.props`
-
-3rd party dependencies required by Caffe are automatically resolved via NuGet.
-
-### CUDA
-Download `CUDA Toolkit 7.5` [from nVidia website](https://developer.nvidia.com/cuda-toolkit).
-
-### Matlab
-Set `MatlabSupport` to `true` and `MatlabDir` to the root of your Matlab installation in `.\windows\CommonSettings.props` to build Caffe Matlab wrapper. Matlab 2014a and later versions are supported.
-
-### cuDNN (optional)
-Download `cuDNN v3` or `cuDNN v4` [from nVidia website](https://developer.nvidia.com/cudnn).
-Unpack downloaded zip to %CUDA_PATH% (environment variable set by CUDA installer).
-Alternatively, you can unpack zip to any location and set `CuDnnPath` to point to this location in `.\windows\CommonSettings.props`.
-`CuDnnPath` defined in `.\windows\CommonSettings.props`.
-By default, cuDNN is not enabled. You can enable cuDNN by setting `UseCuDNN` to `true` in the property file.
-
-### Build
-Now, you should be able to build `.\windows\Caffe.sln`
-
-#### Remark
-After you have built solution with Matlab support, copy all files in .\Build\x64\Release to R-FCN\external\caffe\matlab\caffe_rfcn.
-
-## Further Details
-
-Refer to the BVLC/caffe master branch README for all other details such as license, citation, and so on.
+4.Compatible with original caffe
 
