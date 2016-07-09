@@ -280,7 +280,8 @@ void P2PSync<Dtype>::InternalThreadEntry() {
     Caffe::set_random_seed(
         solver_->param().random_seed() + solver_->param().device_id());
   }
-  solver_->Step(solver_->param().max_iter() - initial_iter_);
+  //solver_->Step(solver_->param().max_iter() - initial_iter_);
+  solver_->Step(1);
 }
 
 template<typename Dtype>
