@@ -38,6 +38,13 @@ void Blob<Dtype>::Reshape(const vector<int>& shape) {
     shape_data[i] = shape[i];
   }
   if (count_ > capacity_) {
+#ifdef DEBUG
+	  int device_id;
+	  cudaGetDevice(&device_id);
+	  LOG(INFO) << "Malloc " << count_ << " bytes from GPU: " << device_id << endl;
+	  ::google::FlushLogFiles(0);
+#endif
+
     capacity_ = count_;
     data_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));
     diff_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));

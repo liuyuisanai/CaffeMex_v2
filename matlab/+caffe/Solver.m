@@ -50,12 +50,26 @@ classdef Solver < handle
           self.nets{t}.copy_from(model_dir);
       end
     end
+    
     function set_input_data(self, inputs)
-      for t = 1 : length(self.gpu_ids)
-          input_data = inputs{t};
-          self.nets{t}.set_input_data(input_data);
+      CHECK(iscell(inputs), 'inputs must be a cell array');
+      CHECK(length(inputs) == length(self.gpu_ids), ...
+        'input data cell length must match gpu number');
+      for n = 1 : length(self.gpu_ids)
+        input_data = inputs{n};
+        CHECK(iscell(input_data), 'input_data for each net must be a cell array');
+        CHECK(length(input_data) == length(self.nets{n}.inputs), ...
+        'input data cell length must match input blob number');
+        for i = 1 : length(self.nets{n}.inputs)
+            CHECK(isnumeric(input_data{i}), 'data must be numeric types');
+            if ~isa(input_data{i}, 'single')
+                inputs{n}{i} = single(input_data{i});
+            end
+        end
       end
+      caffe_('solver_set_input', self.hSolver_self, inputs);
     end
+    
     function output = get_output(self)
       output = cell(length(self.gpu_ids), 1);
       for t = 1 : length(self.gpu_ids)
@@ -68,10 +82,21 @@ classdef Solver < handle
       end
     end
     function reshape_as_input(self, inputs)
-      for t = 1 : length(self.gpu_ids)
-          input_data = inputs{t};
-          self.nets{t}.reshape_as_input(input_data);
+      CHECK(iscell(inputs), 'inputs must be a cell array');
+      CHECK(length(inputs) == length(self.gpu_ids), ...
+        'input data cell length must match gpu number');
+      % reshape input blobs
+      for n = 1 : length(self.gpu_ids)
+        input_data = inputs{n};
+        CHECK(iscell(input_data), 'input_data for each net must be a cell array');
+        CHECK(length(input_data) == length(self.nets{n}.inputs), ...
+        'input data cell length must match input blob number');
+        for i = 1 : length(self.nets{n}.inputs)
+            input_data_size = size(input_data{i});
+            inputs{n}{i} = [input_data_size, ones(1, 4 - length(input_data_size))];
+        end
       end
+      caffe_('solver_reshape_input', self.hSolver_self, inputs);
     end
     function forward(self, inputs)
       for t = 1 : length(self.gpu_ids)
