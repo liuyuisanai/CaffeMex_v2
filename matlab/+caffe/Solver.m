@@ -44,6 +44,50 @@ classdef Solver < handle
     function iter = iter(self)
       iter = caffe_('solver_get_iter', self.hSolver_self);
     end
+    % add new interfaces for solver
+    function use_caffemodel(self, model_dir)
+      for t = 1 : length(self.gpu_ids)
+          self.nets{t}.copy_from(model_dir);
+      end
+    end
+    function set_input_data(self, inputs)
+      for t = 1 : length(self.gpu_ids)
+          input_data = inputs{t};
+          self.nets{t}.set_input_data(input_data);
+      end
+    end
+    function output = get_output(self)
+      output = cell(length(self.gpu_ids), 1);
+      for t = 1 : length(self.gpu_ids)
+          output{t} = self.nets{t}.get_output();
+      end
+    end
+    function set_phase(self, phase)
+      for t = 1 : length(self.gpu_ids)
+          self.nets{t}.set_phase(phase);
+      end
+    end
+    function reshape_as_input(self, inputs)
+      for t = 1 : length(self.gpu_ids)
+          input_data = inputs{t};
+          self.nets{t}.reshape_as_input(input_data);
+      end
+    end
+    function forward(self, inputs)
+      for t = 1 : length(self.gpu_ids)
+          input_data = inputs{t};
+          self.nets{t}.set_input_data(input_data);
+      end
+      caffe_('solver_test');
+    end
+    function forward_prefilled(self)
+      caffe_('solver_test');
+    end
+    function snapshot(self, path)
+        self.nets{1}.save(path);
+    end
+    % add done
+    
     function max_iter = max_iter(self)
       max_iter = caffe_('solver_get_max_iter', self.hSolver_self);
     end

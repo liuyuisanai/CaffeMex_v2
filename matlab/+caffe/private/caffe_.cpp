@@ -442,6 +442,7 @@ static void solver_step(MEX_ARGS) {
 #pragma omp parallel num_threads(int(gpu_groups_[now_solver_].size())) 
   {
 	  int ID = omp_get_thread_num();
+	  Caffe::SetDevice(gpu_groups_[ now_solver_ ][ ID ]);
 	  if ( ID == 0 ){
 #ifdef DEBUG
 		  LOG(INFO) << "Card " << ID << " at point 0\n";
@@ -825,17 +826,15 @@ static void write_mean(MEX_ARGS) {
 
 // Usage: caffe_('solver_test')
 static void solver_test(MEX_ARGS) {
-	mxCHECK(nrhs == 1 && mxIsChar(prhs[ 0 ]),
-		"Usage: caffe_('read_mean', mean_proto_file)");
-	char* mean_proto_file = mxArrayToString(prhs[ 0 ]);
-	mxCHECK_FILE_EXIST(mean_proto_file);
-	Blob<float> data_mean;
-	BlobProto blob_proto;
-	bool result = ReadProtoFromBinaryFile(mean_proto_file, &blob_proto);
-	mxCHECK(result, "Could not read your mean file");
-	data_mean.FromProto(blob_proto);
-	plhs[ 0 ] = blob_to_mx_mat(&data_mean, DATA);
-	mxFree(mean_proto_file);
+#pragma omp parallel num_threads(int(gpu_groups_[ now_solver_ ].size())) 
+	{
+		int ID = omp_get_thread_num();
+		Caffe::SetDevice(gpu_groups_[ now_solver_ ][ ID ]);
+		if ( ID == 0 )
+			syncSolvers_[ now_solver_ ]->solver()->net()->ForwardPrefilled();
+		else
+			syncSolvers_[ now_solver_ ]->workers()[ ID ]->solver()->net()->ForwardPrefilled();
+	}
 }
 
 // Usage: caffe_('version')
