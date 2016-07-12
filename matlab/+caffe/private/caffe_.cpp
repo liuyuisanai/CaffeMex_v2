@@ -50,6 +50,7 @@ static vector<shared_ptr<Net<float> > > nets_;
 static vector< vector<int> > gpu_groups_;
 static int now_solver_ = -1;
 static bool is_log_inited = false;
+static bool is_init = 0;
 // init_key is generated at the beginning and everytime you call reset
 #ifndef _MSC_VER  // We are not using MSVC.
 static double init_key = static_cast<double>(caffe_rng_rand());
@@ -244,6 +245,8 @@ static mxArray* ptr_vec_to_handle_vec(const vector<shared_ptr<T> >& ptr_vec) {
 static void get_solver(MEX_ARGS) {
   mxCHECK(nrhs >= 1 && mxIsChar(prhs[0]),
       "Usage: caffe_('get_solver', solver_file, [gpu_id])");
+  mxCHECK(!is_init, "Solver has already init, for now only support single multi-gpu solver.");
+  is_init = true;
   //if ( nrhs == 2 )
   //{
 	 // mxCHECK(mxIsNumeric(prhs[ 1 ]), "Device_ids only supports double vector~");
@@ -397,19 +400,6 @@ static void solver_solve(MEX_ARGS) {
   mexPrintf("Solver %d finished.\n", now_solver_);
 }
 
-static void do_set_phase(int ID, enum Phase phase_t){
-	vector<boost::shared_ptr<Layer<float> > >& layers = syncSolvers_[ID]->solver()->net()->getlayers();
-	for ( int i = 0; i < layers.size(); ++i ){
-		layers[ i ]->set_phase(phase_t);
-	}
-
-	for ( int i = 1; i < int(gpu_groups_[ ID ].size()); ++i ){
-		vector<boost::shared_ptr<Layer<float> > >& layers = syncSolvers_[ ID ]->workers()[ i ]->solver()->net()->getlayers();
-		for ( int j = 0; j < layers.size(); ++j ){
-			layers[ j ]->set_phase(phase_t);
-		}
-	}
-}
 
 static void do_set_phase(enum Phase phase_t){
 	int ID = now_solver_;
@@ -508,6 +498,12 @@ static void net_set_phase(MEX_ARGS) {
 		mxERROR("Unknown phase");
 	}
 	net->SetPhase(phase);
+	vector<boost::shared_ptr<Layer<float> > >& layers = net->getlayers();
+	for ( int i = 0; i < layers.size(); ++i ){
+		layers[ i ]->set_phase(phase);
+	}
+
+
 	mxFree(phase_name);
 }
 
@@ -731,11 +727,12 @@ static void reset(MEX_ARGS) {
   gpu_groups_.clear();
   // Generate new init_key, so that handles created before becomes invalid
   init_key = static_cast<double>(caffe_rng_rand());
-  if ( is_log_inited )
+  /*if ( is_log_inited )
   {
 	  is_log_inited = false;
 	  ::google::ShutdownGoogleLogging();
-  }
+  }*/
+  is_init = false;
 }
 
 // Usage: caffe_('set_random_seed', random_seed)
@@ -773,8 +770,11 @@ static void init_log(MEX_ARGS) {
 
 	mxCHECK(nrhs == 1 && mxIsChar(prhs[0]),
 		"Usage: caffe_('init_log', log_dir)");
-	if (is_log_inited)
-		::google::ShutdownGoogleLogging();
+	if ( is_log_inited ){
+		//::google::ShutdownGoogleLogging();
+		return;
+
+	}
 	char* log_base_filename = mxArrayToString(prhs[0]);
 	::google::SetLogDestination(0, log_base_filename);
 	mxFree(log_base_filename);
@@ -823,6 +823,21 @@ static void write_mean(MEX_ARGS) {
   mxFree(mean_proto_file);
 }
 
+// Usage: caffe_('solver_test')
+static void solver_test(MEX_ARGS) {
+	mxCHECK(nrhs == 1 && mxIsChar(prhs[ 0 ]),
+		"Usage: caffe_('read_mean', mean_proto_file)");
+	char* mean_proto_file = mxArrayToString(prhs[ 0 ]);
+	mxCHECK_FILE_EXIST(mean_proto_file);
+	Blob<float> data_mean;
+	BlobProto blob_proto;
+	bool result = ReadProtoFromBinaryFile(mean_proto_file, &blob_proto);
+	mxCHECK(result, "Could not read your mean file");
+	data_mean.FromProto(blob_proto);
+	plhs[ 0 ] = blob_to_mx_mat(&data_mean, DATA);
+	mxFree(mean_proto_file);
+}
+
 // Usage: caffe_('version')
 static void version(MEX_ARGS) {
   mxCHECK(nrhs == 0, "Usage: caffe_('version')");
@@ -847,7 +862,8 @@ static handler_registry handlers[] = {
   { "solver_get_max_iter",           solver_get_max_iter            },
   { "solver_restore",                solver_restore                 },
   { "solver_solve",                  solver_solve                   },
-  { "solver_step",                   solver_step                    },
+  { "solver_step", solver_step },
+  { "solver_test", solver_test },
   { "get_net",                       get_net                        },
   { "net_get_attr",                  net_get_attr                   },
   { "net_set_phase",                 net_set_phase                  },

@@ -246,9 +246,6 @@
     <ClCompile Include="..\..\src\caffe\layers\input_layer.cpp">
       <Filter>src\layers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\caffe\layers\log_layer.cpp">
-      <Filter>src\layers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\caffe\layers\loss_layer.cpp">
       <Filter>src\layers</Filter>
     </ClCompile>
@@ -791,9 +788,6 @@
       <Filter>cu\layers</Filter>
     </CudaCompile>
     <CudaCompile Include="..\..\src\caffe\layers\filter_layer.cu">
-      <Filter>cu\layers</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\..\src\caffe\layers\log_layer.cu">
       <Filter>cu\layers</Filter>
     </CudaCompile>
     <CudaCompile Include="..\..\src\caffe\layers\tile_layer.cu">

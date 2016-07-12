@@ -297,7 +297,7 @@ void P2PSync<Dtype>::on_start() {
 
   // Wait for update from parent
   if (parent_) {
-#ifdef _WIN32
+#ifdef _WIN32_
     P2PSync<Dtype> *parent = queue_.pop();
 #else
 	P2PSync<Dtype> *parent = NULL;
@@ -339,7 +339,7 @@ void P2PSync<Dtype>::on_gradients_ready() {
 
   // Sum children gradients as they appear in the queue
   for (int i = 0; i < children_.size(); ++i) {
-#ifdef _WIN32
+#ifdef _WIN32_
 	  P2PSync<Dtype> *child = queue_.pop();
 	  ;
 #else
