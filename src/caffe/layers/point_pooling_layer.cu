@@ -7,7 +7,7 @@
 
 #include <cfloat>
 
-#include "caffe/frcnn/layers/point_pooling_layer.hpp"
+#include "caffe/layers/point_pooling_layer.hpp"
 
 using std::max;
 using std::min;
