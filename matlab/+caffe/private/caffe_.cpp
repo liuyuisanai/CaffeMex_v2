@@ -293,8 +293,8 @@ static void get_solver(MEX_ARGS) {
   char* solver_file = mxArrayToString(prhs[ 0 ]);
   mxCHECK_FILE_EXIST(solver_file);
   SolverParameter solver_param;
-  solver_param.set_device_id(gpu_groups_[ now_solver_ ][ 0 ]);
   ReadSolverParamsFromTextFileOrDie(solver_file, &solver_param);
+  solver_param.set_device_id(gpu_groups_[ now_solver_ ][ 0 ]);
   caffe::SignalHandler signal_handler(caffe::SolverAction::NONE, caffe::SolverAction::NONE);
   boost::shared_ptr<caffe::Solver<float> > solver(caffe::SolverRegistry<float>::CreateSolver(solver_param));
   solver->SetActionFunction(signal_handler.GetActionFunction());
@@ -646,6 +646,83 @@ static void blob_reshape(MEX_ARGS) {
   blob->Reshape(blob_shape);
 }
 
+//Usage: caffe_('solver_reshape_input', hSolver, new_shape)
+static void solver_reshape_input(MEX_ARGS) {
+	mxCHECK(nrhs == 2 && mxIsStruct(prhs[ 0 ]) && mxIsCell(prhs[ 1 ]),
+		"Usage: caffe_('solver_reshape_input', hSolver, new_shape)");
+	if ( mxGetNumberOfElements(prhs[ 1 ]) != gpu_groups_[now_solver_].size() )\
+		mexErrMsgTxt("caffe_ : solver_reshape_input:input size should be equal to selected gpu number.\n");
+	P2PSync<float>* p2psync = handle_to_ptr<P2PSync<float> >(prhs[ 0 ]);
+#pragma omp parallel num_threads(int(gpu_groups_[now_solver_].size())) 
+	//for ( int ID = 0; ID < gpu_groups_[ now_solver_ ].size(); ID++ )
+	{
+		int ID = omp_get_thread_num();
+		Caffe::SetDevice(gpu_groups_[ now_solver_ ][ ID ]);
+		vector<Blob<float>*>& input_blobs =
+			ID == 0 ?
+			const_cast<vector<Blob<float>*>&>( syncSolvers_[now_solver_]->solver()->net()->input_blobs() )
+			:
+			const_cast<vector<Blob<float>*>&>( syncSolvers_[ now_solver_ ]->workers()[ ID ]->solver()->net()->input_blobs() );
+		const mxArray* const input = mxGetCell(prhs[ 1 ], ID);
+		if ( mxGetNumberOfElements(input) != input_blobs.size())
+			mexErrMsgTxt("caffe_ : solver_reshape_input(net):input size should be equal to blob size.\n");
+		for ( int i_t = 0; i_t < input_blobs.size(); i_t++ ){
+			const mxArray* const elem = mxGetCell(input, i_t);
+			if ( !mxIsDouble(elem) ){
+				mexErrMsgTxt("caffe_ Reshape : Data should be single.\n");
+			}
+			double* shape_mem_mtr = mxGetPr(elem);
+			const int num_axes = mxGetNumberOfElements(elem);
+			vector<int> blob_shape(num_axes);
+			for ( int blob_axis = 0, mat_axis = num_axes - 1; blob_axis < num_axes;
+				++blob_axis, --mat_axis ) {
+				blob_shape[ blob_axis ] = static_cast<int>( shape_mem_mtr[ mat_axis ] );
+			}
+			input_blobs[i_t]->Reshape(blob_shape);
+		}
+		if ( ID == 0 ){
+			syncSolvers_[ now_solver_ ]->solver()->net()->Reshape();
+		}
+		else{
+			syncSolvers_[ now_solver_ ]->workers()[ ID ]->solver()->net()->Reshape();
+		}
+	}
+}
+
+//Usage: caffe_('solver_set_input', hSolver, new_shape)
+static void solver_set_input(MEX_ARGS) {
+	mxCHECK(nrhs == 2 && mxIsStruct(prhs[ 0 ]) && mxIsCell(prhs[ 1 ]),
+		"Usage: caffe_('solver_set_input', hSolver, new_shape)");
+	if ( mxGetNumberOfElements(prhs[ 1 ]) != gpu_groups_[ now_solver_ ].size() )\
+		mexErrMsgTxt("caffe_ : solver_set_input:input size should be equal to selected gpu number.\n");
+	P2PSync<float>* p2psync = handle_to_ptr<P2PSync<float> >(prhs[ 0 ]);
+#pragma omp parallel num_threads(int(gpu_groups_[now_solver_].size())) 
+	//for ( int ID = 0; ID < gpu_groups_[ now_solver_ ].size(); ID++ )
+	{
+		int ID = omp_get_thread_num();
+		Caffe::SetDevice(gpu_groups_[ now_solver_ ][ ID ]);
+		vector<Blob<float>*>& input_blobs =
+			ID == 0 ?
+			const_cast<vector<Blob<float>*>&>( syncSolvers_[ now_solver_ ]->solver()->net()->input_blobs() )
+			:
+			const_cast<vector<Blob<float>*>&>( syncSolvers_[ now_solver_ ]->workers()[ ID ]->solver()->net()->input_blobs() );
+		const mxArray* const input = mxGetCell(prhs[ 1 ], ID);
+		if ( mxGetNumberOfElements(input) != input_blobs.size() )
+			mexErrMsgTxt("caffe_ : solver_reshape_input(net):input size should be equal to blob number.\n");
+		for ( int i_t = 0; i_t < input_blobs.size(); i_t++ ){
+			const mxArray* const elem = mxGetCell(input, i_t);
+			if ( !mxIsSingle(elem) ){
+				mexErrMsgTxt("caffe_ Reshape : Data should be single.\n");
+			}
+			if ( mxGetNumberOfElements(elem) != input_blobs[ i_t ]->count() )
+				mexErrMsgTxt("caffe_ : solver_reshape_input(net):input size should be equal to blob size.\n");
+			double* shape_mem_mtr = mxGetPr(elem);
+			const int num_axes = mxGetNumberOfElements(elem);
+			mx_mat_to_blob(elem, input_blobs[i_t], DATA);
+		}
+	}
+}
+
 // Usage: caffe_('blob_get_data', hBlob)
 static void blob_get_data(MEX_ARGS) {
   mxCHECK(nrhs == 1 && mxIsStruct(prhs[0]),
@@ -861,6 +938,8 @@ static handler_registry handlers[] = {
   { "solver_get_max_iter",           solver_get_max_iter            },
   { "solver_restore",                solver_restore                 },
   { "solver_solve",                  solver_solve                   },
+  { "solver_reshape_input", solver_reshape_input },
+  { "solver_set_input", solver_set_input },
   { "solver_step", solver_step },
   { "solver_test", solver_test },
   { "get_net",                       get_net                        },
