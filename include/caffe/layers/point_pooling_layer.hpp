@@ -32,11 +32,9 @@ class PointPoolingLayer : public Layer<Dtype> {
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "PointPooling"; }
-
-  virtual inline int MinBottomBlobs() const { return 3; }
-  virtual inline int MaxBottomBlobs() const { return 3; }
-  virtual inline int MinTopBlobs() const { return 1; }
-  virtual inline int MaxTopBlobs() const { return 1; }
+  
+  virtual inline int ExactNumBottomBlobs() const { return 4; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -53,6 +51,7 @@ class PointPoolingLayer : public Layer<Dtype> {
   int height_;
   int width_;
   bool use_maxpool_;
+  Dtype spatial_scale_;
   Blob<int> class_channel_;
   Blob<int> max_idx_;
 };

@@ -28,28 +28,17 @@ void PointPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     use_maxpool_ = false;
   else
     LOG(FATAL) << "Unknown pooling method.";
+  spatial_scale_ = point_pool_param.spatial_scale();
   string config = point_pool_param.config();
   std::ifstream infile(config.c_str());
   infile >> ncls_;
+  LOG(INFO) << "class num: " << ncls_;
   class_channel_.Reshape(ncls_, 2, 1, 1);
   int* cls_ch = class_channel_.mutable_cpu_data();
-  int tmp;
-  cls_ch[0] = 0;
-  infile >> tmp;
-  cls_ch[1] = tmp - 1;
-  int pre = cls_ch[1];
-  for (int i=1; i<ncls_; i++) {
-    cls_ch += class_channel_.offset(1);
-    cls_ch[0] = pre + 1;
-    infile >> tmp;
-    cls_ch[1] = pre + tmp;
-    pre = cls_ch[1];
+  for (int i=0; i<ncls_; i++) {
+    infile >> cls_ch[2*i] >> cls_ch[2*i+1];
   }
   infile.close();
-  for (int i=0; i<ncls_; i++) {
-    cls_ch = class_channel_.mutable_cpu_data() + class_channel_.offset(i);
-    CHECK_GE(cls_ch[1], cls_ch[0]) << "Channel id must be ascending order.";
-  }
 }
 
 template <typename Dtype>
@@ -68,8 +57,9 @@ template <typename Dtype>
 void PointPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
-  const Dtype* bottom_ids = bottom[1]->cpu_data(); // n * 1 * 1 * 1
-  const Dtype* bottom_points = bottom[2]->cpu_data();
+  const Dtype* bottom_ids = bottom[1]->cpu_data(); // n_roi * 1 * 1 * 1
+  const Dtype* bottom_points = bottom[2]->cpu_data(); // n_roi * all_pnt_num * 4 * 1
+  const Dtype* bottom_points_valid = bottom[3]->cpu_data(); // n_roi * all_pnt_num * 1 * 1
   // Number of ROIs
   int num_rois = bottom[1]->num();
   int batch_size = bottom[0]->num();
@@ -91,13 +81,19 @@ void PointPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
 			const Dtype* feat_map = bottom_data + bottom[0]->offset(roi_batch_ind, ch);
 			const Dtype* pnt = bottom_points + bottom[2]->offset(0, ch);
-			int x1 = round(pnt[0]);
-			int y1 = round(pnt[1]);
-			int x2 = round(pnt[2]);
-			int y2 = round(pnt[3]);
-            if (x2 == -1) {
-                continue; // if set -1, the point is absent
+            const Dtype* valid = bottom_points_valid + bottom[2]->offset(0, ch);
+            bool is_valid = valid[0];
+            if (!is_valid) {
+                continue; // the point is absent
             }
+            int x1 = round(pnt[0] * spatial_scale_);
+			int y1 = round(pnt[1] * spatial_scale_);
+			int x2 = round(pnt[2] * spatial_scale_);
+			int y2 = round(pnt[3] * spatial_scale_);
+            x1 = min(max(x1, 0), width_);
+            y1 = min(max(y1, 0), height_);
+            x2 = min(max(x2, 0), width_);
+            y2 = min(max(y2, 0), height_);
 			if (use_maxpool_) {
 				Dtype maxval = -FLT_MAX;
 				for (int h=y1; h<=y2; h++) {
@@ -127,6 +123,7 @@ void PointPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // Increment blob pointer
     bottom_ids += bottom[1]->offset(1);
 	bottom_points += bottom[2]->offset(1);
+    bottom_points_valid += bottom[3]->offset(1);
 	top_data += top[0]->offset(1);
 	argmax_data += max_idx_.offset(1);
   } // for n

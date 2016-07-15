@@ -1423,4 +1423,5 @@ message PointPoolingParameter {
   }
   optional PoolMethod method = 1 [default = AVE];
   required string config = 2;
+  required float spatial_scale = 3;
 }
