@@ -19,7 +19,7 @@ __global__ void MaxPointPoolForward(const int nthreads, const Dtype* bottom_data
 	int channels, const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
     const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, Dtype* top_data, int* argmax_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
-    // (n, cls, 1, 1) is an element in the pooled output
+    // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
     int cls = index % ncls;
     int n = index / ncls;
 
@@ -27,14 +27,16 @@ __global__ void MaxPointPoolForward(const int nthreads, const Dtype* bottom_data
 	argmax_data += n * channels;
     bottom_ids += n;
     int roi_batch_ind = bottom_ids[0];
-	top_data[index] = 0;
-	
+	int ch_len = cls_ch[1] - cls_ch[0] + 1;
+    
 	for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
+        argmax_data[ch] = -1;
 		const Dtype* feat_map = bottom_data + (roi_batch_ind * channels + ch) * height * width;
 		const Dtype* pnt = bottom_points + (n * channels + ch) * 4;
 		const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
         if (!is_valid) {
+            ch_len--;
             continue; // the point is absent
         }
         int x1 = round(pnt[0] * spatial_scale);
@@ -57,7 +59,8 @@ __global__ void MaxPointPoolForward(const int nthreads, const Dtype* bottom_data
 		}
 		top_data[index] += maxval;
 	}
-	top_data[index] /= (cls_ch[1] - cls_ch[0] + 1);
+    if (ch_len > 0)
+        top_data[index] /= ch_len;
 	
   }
 }
@@ -67,14 +70,14 @@ __global__ void AvePointPoolForward(const int nthreads, const Dtype* bottom_data
 	int channels, const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
     const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, Dtype* top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
-    // (n, cls, 1, 1) is an element in the pooled output
+    // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
     int cls = index % ncls;
     int n = index / ncls;
 
     cls_ch += cls * 2;
     bottom_ids += n;
     int roi_batch_ind = bottom_ids[0];
-	top_data[index] = 0;
+    int ch_len = cls_ch[1] - cls_ch[0] + 1;
 	
 	for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
 		const Dtype* feat_map = bottom_data + (roi_batch_ind * channels + ch) * height * width;
@@ -82,6 +85,7 @@ __global__ void AvePointPoolForward(const int nthreads, const Dtype* bottom_data
 		const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
         if (!is_valid) {
+            ch_len--;
             continue; // the point is absent
         }
         int x1 = round(pnt[0] * spatial_scale);
@@ -101,7 +105,8 @@ __global__ void AvePointPoolForward(const int nthreads, const Dtype* bottom_data
 		}
 		top_data[index] += avgval / (y2 - y1 + 1) / (x2 - x1 + 1);
 	}
-	top_data[index] /= (cls_ch[1] - cls_ch[0] + 1);
+    if (ch_len > 0)
+        top_data[index] /= ch_len;
 	
   }
 }
@@ -117,8 +122,6 @@ void PointPoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 	int* argmax_data = max_idx_.mutable_gpu_data();
 	int count = top[0]->count();
     caffe_gpu_set(count, Dtype(0), top_data);
-    int idx_count = max_idx_.count();
-    caffe_gpu_set(idx_count, -1, argmax_data);
 	// NOLINT_NEXT_LINE(whitespace/operators)
 	if (use_maxpool_)
         MaxPointPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
@@ -137,59 +140,30 @@ __global__ void MaxPointPoolBackward(const int nthreads, const Dtype* top_diff,
     const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
     Dtype* bottom_diff, const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid) {
   CUDA_KERNEL_LOOP(index, nthreads) {
-    // (n, ch, h, w) coords in bottom data
-    int w = index % width;
-    int h = (index / width) % height;
-    int ch = (index / width / height) % channels;
-    int n = index / width / height / channels;
-    
-    int cls = -1;
-    for (int i=0; i<ncls; i++) {
-        if (ch >= cls_ch[0] && ch <= cls_ch[1]) {
-            cls = i;
-            break;
-        }
-        cls_ch += 2;
-    }
-    int ch_len = cls_ch[1] - cls_ch[0] + 1;
+    // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
+    int cls = index % ncls;
+    int n = index / ncls;
 
-    Dtype gradient = 0;
-    // Accumulate gradient over all ROIs that pooled this element
-    for (int roi_n = 0; roi_n < num_rois; ++roi_n) {
-        const Dtype* offset_bottom_ids = bottom_ids + roi_n;
-        int roi_batch_ind = offset_bottom_ids[0];
-        // Skip if ROI's batch index doesn't match n
-        if (n != roi_batch_ind) {
-            continue;
-        }
-        
-        const Dtype* pnt = bottom_points + (roi_n * channels + ch) * 4;
+    cls_ch += cls * 2;
+	argmax_data += n * channels;
+    bottom_ids += n;
+    int roi_batch_ind = bottom_ids[0];
+	int ch_len = cls_ch[1] - cls_ch[0] + 1;
+    
+    for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
         const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
         if (!is_valid) {
-            continue; // the point is absent
+            ch_len--; // the point is absent
         }
-        int x1 = round(pnt[0] * spatial_scale);
-        int y1 = round(pnt[1] * spatial_scale);
-        int x2 = round(pnt[2] * spatial_scale);
-        int y2 = round(pnt[3] * spatial_scale);
-        x1 = min(max(x1, 0), width);
-        y1 = min(max(y1, 0), height);
-        x2 = min(max(x2, 0), width);
-        y2 = min(max(y2, 0), height);
-        // Skip if point area doesn't include (h, w)
-        const bool in_area = (w >= x1 && w <= x2 && h >= y1 && h <= y2);
-        if (!in_area) {
-            continue;
-        }
+    }
 
-        const Dtype* offset_top_diff = top_diff + roi_n * ncls + cls;
-        const int* offset_argmax_data = argmax_data + roi_n * channels + ch;
-        if (offset_argmax_data[0] == (h * width + w)) {
-            gradient += offset_top_diff[0] / ch_len;
-        }
-    } // for roi_n
-    bottom_diff[index] = gradient;
+    for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
+		Dtype* diff = bottom_diff + (roi_batch_ind * channels + ch) * height * width;
+        int ind = argmax_data[ch];
+        if (ind > -1)
+            diff[ind] += top_diff[index] / ch_len; 
+	}
   }
 }
 
@@ -199,34 +173,27 @@ __global__ void AvePointPoolBackward(const int nthreads, const Dtype* top_diff,
     const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
     Dtype* bottom_diff, const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid) {
   CUDA_KERNEL_LOOP(index, nthreads) {
-    // (n, ch, h, w) coords in bottom data
-    int w = index % width;
-    int h = (index / width) % height;
-    int ch = (index / width / height) % channels;
-    int n = index / width / height / channels;
-    
-    int cls = -1;
-    for (int i=0; i<ncls; i++) {
-        if (ch >= cls_ch[0] && ch <= cls_ch[1]) {
-            cls = i;
-            break;
-        }
-        cls_ch += 2;
-    }
-    int ch_len = cls_ch[1] - cls_ch[0] + 1;
+    // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
+    int cls = index % ncls;
+    int n = index / ncls;
 
-    Dtype gradient = 0;
-    // Accumulate gradient over all ROIs that pooled this element
-    for (int roi_n = 0; roi_n < num_rois; ++roi_n) {
-        const Dtype* offset_bottom_ids = bottom_ids + roi_n;
-        int roi_batch_ind = offset_bottom_ids[0];
-        // Skip if ROI's batch index doesn't match n
-        if (n != roi_batch_ind) {
-            continue;
-        }
-        
-        const Dtype* pnt = bottom_points + (roi_n * channels + ch) * 4;
+    cls_ch += cls * 2;
+    bottom_ids += n;
+    int roi_batch_ind = bottom_ids[0];
+    int ch_len = cls_ch[1] - cls_ch[0] + 1;
+	
+    for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
         const Dtype* valid = bottom_points_valid + n * channels + ch;
+        bool is_valid = valid[0];
+        if (!is_valid) {
+            ch_len--; // the point is absent
+        }
+    }
+    
+	for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
+		Dtype* diff = bottom_diff + (roi_batch_ind * channels + ch) * height * width;
+		const Dtype* pnt = bottom_points + (n * channels + ch) * 4;
+		const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
         if (!is_valid) {
             continue; // the point is absent
@@ -239,16 +206,13 @@ __global__ void AvePointPoolBackward(const int nthreads, const Dtype* top_diff,
         y1 = min(max(y1, 0), height);
         x2 = min(max(x2, 0), width);
         y2 = min(max(y2, 0), height);
-        // Skip if point area doesn't include (h, w)
-        const bool in_area = (w >= x1 && w <= x2 && h >= y1 && h <= y2);
-        if (!in_area) {
-            continue;
-        }
-
-        const Dtype* offset_top_diff = top_diff + roi_n * ncls + cls;
-        gradient += offset_top_diff[0] / ch_len / (x2 - x1 + 1) / (y2 - y1 + 1);
-    } // for roi_n
-    bottom_diff[index] = gradient;
+		for (int h=y1; h<=y2; h++) {
+			for (int w=x1; w<=x2; w++) {
+				int ind = h * width + w;
+				diff[ind] += top_diff[index] / ch_len / (y2 - y1 + 1) / (x2 - x1 + 1);
+			}
+		}
+	}
   }
 }
 
@@ -263,8 +227,8 @@ void PointPoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const Dtype* bottom_points_valid = bottom[3]->gpu_data(); // n_roi * all_pnt_num * 1 * 1
 	const Dtype* top_diff = top[0]->gpu_diff();
 	Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
-	const int count = bottom[0]->count();
-	caffe_gpu_set(count, Dtype(0.), bottom_diff);
+	const int count = top[0]->count();
+	caffe_gpu_set(bottom[0]->count(), Dtype(0.), bottom_diff);
 	const int* argmax_data = max_idx_.gpu_data();
     const int* cls_ch = class_channel_.gpu_data();
 	// NOLINT_NEXT_LINE(whitespace/operators)

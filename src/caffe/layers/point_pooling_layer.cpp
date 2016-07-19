@@ -78,12 +78,14 @@ void PointPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
 	for (int i=0; i<ncls_; i++) {
         const int* cls_ch = class_channel_.cpu_data() + class_channel_.offset(i);
+        int ch_len = cls_ch[1] - cls_ch[0] + 1;
 		for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
 			const Dtype* feat_map = bottom_data + bottom[0]->offset(roi_batch_ind, ch);
 			const Dtype* pnt = bottom_points + bottom[2]->offset(0, ch);
             const Dtype* valid = bottom_points_valid + bottom[2]->offset(0, ch);
             bool is_valid = valid[0];
             if (!is_valid) {
+                ch_len--;
                 continue; // the point is absent
             }
             int x1 = round(pnt[0] * spatial_scale_);
@@ -118,7 +120,8 @@ void PointPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				top_data[i] += avgval / (y2 - y1 + 1) / (x2 - x1 + 1);
 			}
 		} // for ch
-		top_data[i] /= cls_ch[1] - cls_ch[0] + 1;
+        if (ch_len > 0)
+            top_data[i] /= ch_len;
 	} // for i
     // Increment blob pointer
     bottom_ids += bottom[1]->offset(1);
