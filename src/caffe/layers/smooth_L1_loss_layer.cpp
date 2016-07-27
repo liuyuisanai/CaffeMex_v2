@@ -46,7 +46,14 @@ void SmoothL1LossLayer<Dtype>::Reshape(
   }
 
   outer_num_ = bottom[0]->num();
-  inner_num_ = bottom[0]->height() * bottom[0]->width();
+  if ( has_weights_ ){
+	  inner_num_ = caffe_cpu_asum(bottom[ 2 ]->count(), bottom[ 2 ]->cpu_data()) / bottom[ 2 ]->num();
+	  inner_num_ = inner_num_ == 0 ? 1 : inner_num_;
+  }
+  else{
+	  inner_num_ = bottom[ 0 ]->height() * bottom[ 0 ]->width();
+  }
+  
 
   diff_.Reshape(bottom[0]->num(), bottom[0]->channels(),
       bottom[0]->height(), bottom[0]->width());
