@@ -103,7 +103,7 @@ namespace caffe {
     Blob<Dtype> diff_;
     Blob<Dtype> errors_;
     bool has_weights_;
-
+	float valid_num_;
     int outer_num_, inner_num_;
 
     /// How to normalize the output loss.

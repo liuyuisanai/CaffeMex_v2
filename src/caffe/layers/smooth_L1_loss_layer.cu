@@ -79,7 +79,6 @@ namespace caffe {
 
 		// Output per-instance loss
     if (top.size() >= 2) {
-		CHECK(has_weights_ == false) << "Instance loss cannot be fetch when loss is weighted by instance.";
       kernel_channel_sum<Dtype> << <CAFFE_GET_BLOCKS(top[0]->count()), CAFFE_CUDA_NUM_THREADS >> >
         (outer_num_, bottom[0]->channels(), inner_num_, errors_.gpu_data(),
           top[1]->mutable_gpu_data());
