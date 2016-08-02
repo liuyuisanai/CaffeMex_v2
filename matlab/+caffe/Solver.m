@@ -99,10 +99,7 @@ classdef Solver < handle
       caffe_('solver_reshape_input', self.hSolver_self, inputs);
     end
     function forward(self, inputs)
-      for t = 1 : length(self.gpu_ids)
-          input_data = inputs{t};
-          self.nets{t}.set_input_data(input_data);
-      end
+      self.set_input_data(input_data);
       caffe_('solver_test');
     end
     function forward_prefilled(self)

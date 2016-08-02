@@ -35,7 +35,8 @@ namespace caffe {
 
   template <typename Dtype>
   __global__ void kernel_channel_sum(const int num, const int channels,
-    const int spatial_dim, const Dtype* data, Dtype* channel_sum) {
+	  const int spatial_dim, const Dtype* data, Dtype* channel_sum) {
+	  
     CUDA_KERNEL_LOOP(index, num * spatial_dim) {
       int n = index / spatial_dim;
       int s = index % spatial_dim;

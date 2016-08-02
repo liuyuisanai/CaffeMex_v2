@@ -44,9 +44,16 @@ void SmoothL1LossLayer<Dtype>::Reshape(
     CHECK_EQ(bottom[0]->height(), bottom[2]->height());
     CHECK_EQ(bottom[0]->width(), bottom[2]->width());
   }
-
+  
+  inner_num_ = bottom[ 0 ]->height() * bottom[ 0 ]->width();
   outer_num_ = bottom[0]->num();
-  inner_num_ = bottom[0]->height() * bottom[0]->width();
+  
+  if ( has_weights_ ){
+	  valid_num_ = float(caffe_cpu_asum(bottom[ 2 ]->count(), bottom[ 2 ]->cpu_data())) / bottom[ 2 ]->num();
+  }
+	  
+
+  
 
   diff_.Reshape(bottom[0]->num(), bottom[0]->channels(),
       bottom[0]->height(), bottom[0]->width());
@@ -68,7 +75,7 @@ Dtype SmoothL1LossLayer<Dtype>::get_normalizer(
 		normalizer = Dtype(outer_num_ * inner_num_);
 		break;
 	case LossParameter_NormalizationMode_VALID:
-    normalizer = Dtype(outer_num_ * inner_num_);
+		normalizer = Dtype(outer_num_ * valid_num_);
 		break;
 	case LossParameter_NormalizationMode_BATCH_SIZE:
 		normalizer = Dtype(outer_num_);
