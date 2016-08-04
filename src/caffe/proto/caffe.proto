@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 146 (last added: parameter_param)
+// LayerParameter next available layer-specific ID: 147 (last added: parameter_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -363,6 +363,7 @@ message LayerParameter {
   optional BatchNormParameter batch_norm_param = 139;
   optional BoxAnnotatorOHEMParameter box_annotator_ohem_param = 10000;
   optional BiasParameter bias_param = 141;
+  optional BNParameter bn_param = 146;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -552,6 +553,15 @@ message BiasParameter {
   // Default is the zero (0) initialization, resulting in the BiasLayer
   // initially performing the identity operation.
   optional FillerParameter filler = 3;
+}
+
+// Message that stores parameters used by BNLayer
+message BNParameter {
+	optional FillerParameter scale_filler = 1; // The filler for the scale
+	optional FillerParameter shift_filler = 2; // The filler for the shift
+	optional float var_eps = 3 [default = 1e-10]; // The epsilon added to variance
+	optional bool moving_average = 4 [default = true]; // whether or not using moving average for inference
+	optional float decay = 5 [default = 0.95]; // The decay factor for moving average
 }
 
 message ContrastiveLossParameter {
