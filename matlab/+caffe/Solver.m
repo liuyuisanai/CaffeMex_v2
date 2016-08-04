@@ -98,7 +98,7 @@ classdef Solver < handle
       end
       caffe_('solver_reshape_input', self.hSolver_self, inputs);
     end
-    function forward(self, inputs)
+    function forward(self, input_data)
       self.set_input_data(input_data);
       caffe_('solver_test');
     end
