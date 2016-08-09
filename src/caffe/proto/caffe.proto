@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 146 (last added: parameter_param)
+// LayerParameter next available layer-specific ID: 148 (last added: normalize_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -363,6 +363,7 @@ message LayerParameter {
   optional BatchNormParameter batch_norm_param = 139;
   optional BoxAnnotatorOHEMParameter box_annotator_ohem_param = 10000;
   optional BiasParameter bias_param = 141;
+  optional BNParameter bn_param = 146;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -386,6 +387,7 @@ message LayerParameter {
   optional LRNParameter lrn_param = 118;
   optional MemoryDataParameter memory_data_param = 119;
   optional MVNParameter mvn_param = 120;
+  optional NormalizeParameter normalize_param = 147;
   optional ParameterParameter parameter_param = 145;
   optional PoolingParameter pooling_param = 121;
   optional PowerParameter power_param = 122;
@@ -552,6 +554,15 @@ message BiasParameter {
   // Default is the zero (0) initialization, resulting in the BiasLayer
   // initially performing the identity operation.
   optional FillerParameter filler = 3;
+}
+
+// Message that stores parameters used by BNLayer
+message BNParameter {
+	optional FillerParameter scale_filler = 1; // The filler for the scale
+	optional FillerParameter shift_filler = 2; // The filler for the shift
+	optional float var_eps = 3 [default = 1e-10]; // The epsilon added to variance
+	optional bool moving_average = 4 [default = true]; // whether or not using moving average for inference
+	optional float decay = 5 [default = 0.95]; // The decay factor for moving average
 }
 
 message ContrastiveLossParameter {
@@ -887,6 +898,10 @@ message MVNParameter {
 
   // Epsilon for not dividing by zero while normalizing variance
   optional float eps = 3 [default = 1e-9];
+}
+
+message NormalizeParameter {
+  optional float coeff = 1 [default = 1.0];
 }
 
 message ParameterParameter {
