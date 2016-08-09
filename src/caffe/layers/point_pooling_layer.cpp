@@ -31,6 +31,7 @@ void PointPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   spatial_scale_ = point_pool_param.spatial_scale();
   string config = point_pool_param.config();
   std::ifstream infile(config.c_str());
+  CHECK(infile.good()) << "file " << config << " is not existed.";
   infile >> ncls_;
   LOG(INFO) << "class num: " << ncls_;
   class_channel_.Reshape(ncls_, 2, 1, 1);
