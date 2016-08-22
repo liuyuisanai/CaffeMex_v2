@@ -17,7 +17,7 @@ namespace caffe {
 template <typename Dtype>
 __global__ void MaxPointPoolForward(const int nthreads, const Dtype* bottom_data, const int ncls, 
 	int channels, const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
-    const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, Dtype* top_data, int* argmax_data) {
+    const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, Dtype* top_data, int* argmax_data, const bool use_valid_channel) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
     int cls = index % ncls;
@@ -35,7 +35,7 @@ __global__ void MaxPointPoolForward(const int nthreads, const Dtype* bottom_data
 		const Dtype* pnt = bottom_points + (n * channels + ch) * 4;
 		const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
-        if (!is_valid) {
+        if (!is_valid && use_valid_channel) {
             ch_len--;
             continue; // the point is absent
         }
@@ -68,7 +68,7 @@ __global__ void MaxPointPoolForward(const int nthreads, const Dtype* bottom_data
 template <typename Dtype>
 __global__ void AvePointPoolForward(const int nthreads, const Dtype* bottom_data, const int ncls, 
 	int channels, const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
-    const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, Dtype* top_data) {
+    const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, Dtype* top_data, const bool use_valid_channel) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
     int cls = index % ncls;
@@ -84,7 +84,7 @@ __global__ void AvePointPoolForward(const int nthreads, const Dtype* bottom_data
 		const Dtype* pnt = bottom_points + (n * channels + ch) * 4;
 		const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
-        if (!is_valid) {
+        if (!is_valid && use_valid_channel) {
             ch_len--;
             continue; // the point is absent
         }
@@ -126,11 +126,11 @@ void PointPoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 	if (use_maxpool_)
         MaxPointPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
 		  count, bottom_data, ncls_, channels_, height_, width_,
-		  cls_ch, spatial_scale_, bottom_ids, bottom_points, bottom_points_valid, top_data, argmax_data);
+		  cls_ch, spatial_scale_, bottom_ids, bottom_points, bottom_points_valid, top_data, argmax_data, use_valid_channel_);
 	else
         AvePointPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
           count, bottom_data, ncls_, channels_, height_, width_,
-          cls_ch, spatial_scale_, bottom_ids, bottom_points, bottom_points_valid, top_data);
+          cls_ch, spatial_scale_, bottom_ids, bottom_points, bottom_points_valid, top_data, use_valid_channel_);
 	CUDA_POST_KERNEL_CHECK;
 }
 
@@ -138,7 +138,7 @@ template <typename Dtype>
 __global__ void MaxPointPoolBackward(const int nthreads, const Dtype* top_diff,
     const int* argmax_data, const int num_rois, const int ncls, const int channels,
     const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
-    Dtype* bottom_diff, const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid) {
+    Dtype* bottom_diff, const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, const bool use_valid_channel) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
     int cls = index % ncls;
@@ -153,7 +153,7 @@ __global__ void MaxPointPoolBackward(const int nthreads, const Dtype* top_diff,
     for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
         const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
-        if (!is_valid) {
+        if (!is_valid && use_valid_channel) {
             ch_len--; // the point is absent
         }
     }
@@ -171,7 +171,7 @@ template <typename Dtype>
 __global__ void AvePointPoolBackward(const int nthreads, const Dtype* top_diff,
     const int num_rois, const int ncls, const int channels,
     const int height, const int width, const int* cls_ch, const Dtype spatial_scale,
-    Dtype* bottom_diff, const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid) {
+    Dtype* bottom_diff, const Dtype* bottom_ids, const Dtype* bottom_points, const Dtype* bottom_points_valid, const bool use_valid_channel) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // (n, cls, 1, 1) is an element in the pooled output, n represents roi id
     int cls = index % ncls;
@@ -185,7 +185,7 @@ __global__ void AvePointPoolBackward(const int nthreads, const Dtype* top_diff,
     for (int ch = cls_ch[0]; ch <= cls_ch[1]; ch++) {
         const Dtype* valid = bottom_points_valid + n * channels + ch;
         bool is_valid = valid[0];
-        if (!is_valid) {
+        if (!is_valid && use_valid_channel) {
             ch_len--; // the point is absent
         }
     }
@@ -235,11 +235,11 @@ void PointPoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 	if (use_maxpool_)
 		MaxPointPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
 		  count, top_diff, argmax_data, top[0]->num(), ncls_, channels_, 
-		  height_, width_, cls_ch, spatial_scale_, bottom_diff, bottom_ids, bottom_points, bottom_points_valid);
+		  height_, width_, cls_ch, spatial_scale_, bottom_diff, bottom_ids, bottom_points, bottom_points_valid, use_valid_channel_);
 	else
 		AvePointPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
 		  count, top_diff, top[0]->num(), ncls_, channels_, height_, width_, 
-		  cls_ch, spatial_scale_, bottom_diff, bottom_ids, bottom_points, bottom_points_valid);
+		  cls_ch, spatial_scale_, bottom_diff, bottom_ids, bottom_points, bottom_points_valid, use_valid_channel_);
 	CUDA_POST_KERNEL_CHECK;
 }
 
