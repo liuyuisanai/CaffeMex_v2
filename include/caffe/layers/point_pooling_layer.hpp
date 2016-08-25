@@ -53,6 +53,7 @@ class PointPoolingLayer : public Layer<Dtype> {
   bool use_maxpool_;
   bool use_valid_channel_;
   Dtype spatial_scale_;
+  Dtype conf_th_;
   Blob<int> class_channel_;
   Blob<int> max_idx_;
 };

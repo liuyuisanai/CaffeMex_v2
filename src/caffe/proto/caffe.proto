@@ -1455,4 +1455,5 @@ message PointPoolingParameter {
   required ChannelMethod channel_method = 2;
   required string config = 3;
   required float spatial_scale = 4;
+  optional float confidence_threshold = 5 [default = 0.5];
 }

@@ -36,6 +36,7 @@ void PointPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   else
     LOG(FATAL) << "Unknown channel method.";
 
+  conf_th_ = point_pool_param.confidence_threshold();
   spatial_scale_ = point_pool_param.spatial_scale();
   string config = point_pool_param.config();
   std::ifstream infile(config.c_str());
