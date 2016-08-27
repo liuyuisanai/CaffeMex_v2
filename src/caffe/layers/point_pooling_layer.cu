@@ -2,7 +2,7 @@
 // Fast R-CNN
 // Copyright (c) 2015 Microsoft
 // Licensed under The MIT License [see fast-rcnn/LICENSE for details]
-// Written by Ross Girshick
+// Written by LBY, LY
 // ------------------------------------------------------------------
 
 #include <cfloat>
@@ -41,14 +41,14 @@ __global__ void MaxPointPoolForward(const int nthreads, const Dtype* bottom_data
                 continue; // the point is absent
             }
         }
-        int x1 = round(pnt[0] * spatial_scale);
-        int y1 = round(pnt[1] * spatial_scale);
-        int x2 = round(pnt[2] * spatial_scale);
-        int y2 = round(pnt[3] * spatial_scale);
-        x1 = min(max(x1, 0), width);
-        y1 = min(max(y1, 0), height);
-        x2 = min(max(x2, 0), width);
-        y2 = min(max(y2, 0), height);
+        int x1 = floor(pnt[0] * spatial_scale);
+        int y1 = floor(pnt[1] * spatial_scale);
+        int x2 = ceil(pnt[2] * spatial_scale);
+        int y2 = ceil(pnt[3] * spatial_scale);
+        x1 = min(max(x1, 0), width - 1);
+        y1 = min(max(y1, 0), height - 1);
+        x2 = min(max(x2, 0), width - 1);
+        y2 = min(max(y2, 0), height - 1);
 		Dtype maxval = -FLT_MAX;
 		for (int h=y1; h<=y2; h++) {
 			for (int w=x1; w<=x2; w++) {
@@ -94,14 +94,14 @@ __global__ void AvePointPoolForward(const int nthreads, const Dtype* bottom_data
                 continue; // the point is absent
             }
         }
-        int x1 = round(pnt[0] * spatial_scale);
-        int y1 = round(pnt[1] * spatial_scale);
-        int x2 = round(pnt[2] * spatial_scale);
-        int y2 = round(pnt[3] * spatial_scale);
-        x1 = min(max(x1, 0), width);
-        y1 = min(max(y1, 0), height);
-        x2 = min(max(x2, 0), width);
-        y2 = min(max(y2, 0), height);
+        int x1 = floor(pnt[0] * spatial_scale);
+        int y1 = floor(pnt[1] * spatial_scale);
+        int x2 = ceil(pnt[2] * spatial_scale);
+        int y2 = ceil(pnt[3] * spatial_scale);
+        x1 = min(max(x1, 0), width - 1);
+        y1 = min(max(y1, 0), height - 1);
+        x2 = min(max(x2, 0), width - 1);
+        y2 = min(max(y2, 0), height - 1);
 		Dtype avgval = 0;
 		for (int h=y1; h<=y2; h++) {
 			for (int w=x1; w<=x2; w++) {
@@ -219,14 +219,14 @@ __global__ void AvePointPoolBackward(const int nthreads, const Dtype* top_diff,
                 continue; // the point is absent
             }
         }
-        int x1 = round(pnt[0] * spatial_scale);
-        int y1 = round(pnt[1] * spatial_scale);
-        int x2 = round(pnt[2] * spatial_scale);
-        int y2 = round(pnt[3] * spatial_scale);
-        x1 = min(max(x1, 0), width);
-        y1 = min(max(y1, 0), height);
-        x2 = min(max(x2, 0), width);
-        y2 = min(max(y2, 0), height);
+        int x1 = floor(pnt[0] * spatial_scale);
+        int y1 = floor(pnt[1] * spatial_scale);
+        int x2 = ceil(pnt[2] * spatial_scale);
+        int y2 = ceil(pnt[3] * spatial_scale);
+        x1 = min(max(x1, 0), width - 1);
+        y1 = min(max(y1, 0), height - 1);
+        x2 = min(max(x2, 0), width - 1);
+        y2 = min(max(y2, 0), height - 1);
 		for (int h=y1; h<=y2; h++) {
 			for (int w=x1; w<=x2; w++) {
 				int ind = h * width + w;
