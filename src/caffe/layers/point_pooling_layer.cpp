@@ -22,15 +22,25 @@ template <typename Dtype>
 void PointPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   PointPoolingParameter point_pool_param = this->layer_param_.point_pooling_param();
-  if (point_pool_param.method() == PointPoolingParameter_PoolMethod_MAX)
+  if (point_pool_param.pooling_method() == PointPoolingParameter_PoolMethod_MAX)
     use_maxpool_ = true;
-  else if (point_pool_param.method() == PointPoolingParameter_PoolMethod_AVE)
+  else if (point_pool_param.pooling_method() == PointPoolingParameter_PoolMethod_AVE)
     use_maxpool_ = false;
   else
     LOG(FATAL) << "Unknown pooling method.";
+
+  if (point_pool_param.channel_method() == PointPoolingParameter_ChannelMethod_VALID)
+    use_valid_channel_ = true;
+  else if (point_pool_param.channel_method() == PointPoolingParameter_ChannelMethod_ALL)
+    use_valid_channel_ = false;
+  else
+    LOG(FATAL) << "Unknown channel method.";
+
+  conf_th_ = point_pool_param.confidence_threshold();
   spatial_scale_ = point_pool_param.spatial_scale();
   string config = point_pool_param.config();
   std::ifstream infile(config.c_str());
+  CHECK(infile.good()) << "file " << config << " is not existed.";
   infile >> ncls_;
   LOG(INFO) << "class num: " << ncls_;
   class_channel_.Reshape(ncls_, 2, 1, 1);

@@ -269,7 +269,7 @@ void SGDSolver<Dtype>::SnapshotSolverStateToBinaryProto(
     BlobProto* history_blob = state.add_history();
     history_[i]->ToProto(history_blob);
   }
-  string snapshot_filename = Solver<Dtype>::SnapshotFilename(".solverstate");
+  string snapshot_filename = model_filename + ".solverstate";
   LOG(INFO)
     << "Snapshotting solver state to binary proto file " << snapshot_filename;
   WriteProtoToBinaryFile(state, snapshot_filename.c_str());

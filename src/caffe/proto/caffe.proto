@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 147 (last added: parameter_param)
+// LayerParameter next available layer-specific ID: 151 (last added: psroi_region_pooling_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -364,6 +364,7 @@ message LayerParameter {
   optional BoxAnnotatorOHEMParameter box_annotator_ohem_param = 10000;
   optional BiasParameter bias_param = 141;
   optional BNParameter bn_param = 146;
+  optional BNHKParameter bnhk_param = 148;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -387,12 +388,16 @@ message LayerParameter {
   optional LRNParameter lrn_param = 118;
   optional MemoryDataParameter memory_data_param = 119;
   optional MVNParameter mvn_param = 120;
+  optional NormalizeParameter normalize_param = 147;
   optional ParameterParameter parameter_param = 145;
+  optional PointPoolingParameter point_pooling_param = 149;
   optional PoolingParameter pooling_param = 121;
   optional PowerParameter power_param = 122;
   optional PReLUParameter prelu_param = 131;
   optional PSROIPoolingParameter psroi_pooling_param = 10001;
+  optional PSROIRegionPoolingParameter psroi_region_pooling_param = 151;
   optional PythonParameter python_param = 130;
+  optional RegionPoolingParameter region_pooling_param = 150;
   optional ReductionParameter reduction_param = 136;
   optional ReLUParameter relu_param = 123;
   optional ReshapeParameter reshape_param = 133;
@@ -407,7 +412,6 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
-  optional PointPoolingParameter point_pooling_param = 149;
 }
 
 // Message that stores parameters used to apply transformation
@@ -553,6 +557,23 @@ message BiasParameter {
   // Default is the zero (0) initialization, resulting in the BiasLayer
   // initially performing the identity operation.
   optional FillerParameter filler = 3;
+}
+
+message BNHKParameter {
+  optional FillerParameter slope_filler = 1;
+  optional FillerParameter bias_filler = 2;
+  optional float momentum = 3 [default = 0.9];
+  optional float eps = 4 [default = 1e-5];
+  // If true, will use the moving average mean and std for training and tes     t.
+  // Will override the lr_param and freeze all the parameters.
+  // Make sure to initialize the layer properly with pretrained parameters.
+  optional bool frozen = 5 [default = false];
+  enum Engine {
+    DEFAULT = 0;
+    CAFFE = 1;
+    CUDNN = 2;
+  }
+  optional Engine engine = 6 [default = DEFAULT];
 }
 
 // Message that stores parameters used by BNLayer
@@ -899,6 +920,10 @@ message MVNParameter {
   optional float eps = 3 [default = 1e-9];
 }
 
+message NormalizeParameter {
+  optional float coeff = 1 [default = 1.0];
+}
+
 message ParameterParameter {
   optional BlobShape shape = 1;
 }
@@ -987,6 +1012,16 @@ message ReductionParameter {
   optional float coeff = 3 [default = 1.0]; // coefficient for output
 }
 
+message RegionPoolingParameter {
+  // Pad, kernel size, and stride are all given as a single value for equal
+  // dimensions in height and width or as Y, X pairs.
+  optional uint32 pooled_h = 1 [default = 0]; // The pooled output height
+  optional uint32 pooled_w = 2 [default = 0]; // The pooled output width
+  // Multiplicative spatial scale factor to translate ROI coords from their
+  // input scale to the scale used when pooling
+  optional float spatial_scale = 3 [default = 1];
+  optional float offset = 4 [default = 6];
+}
 // Message that stores parameters used by ReLULayer
 message ReLUParameter {
   // Allow non-zero slope for negative inputs to speed up optimization
@@ -1431,7 +1466,28 @@ message PointPoolingParameter {
     AVE = 0;
     MAX = 1;
   }
-  optional PoolMethod method = 1 [default = AVE];
-  required string config = 2;
-  required float spatial_scale = 3;
+  enum ChannelMethod {
+    VALID = 0;
+    ALL = 1;
+  }
+  required PoolMethod pooling_method = 1;
+  required ChannelMethod channel_method = 2;
+  required string config = 3;
+  required float spatial_scale = 4;
+  optional float confidence_threshold = 5 [default = 0.5];
+}
+
+message PSROIRegionPoolingParameter {
+  // Pad, kernel size, and stride are all given as a single value for equal
+  // dimensions in height and width or as Y, X pairs.
+  optional uint32 pooled_h = 1 [default = 0]; // The pooled output height
+  optional uint32 pooled_w = 2 [default = 0]; // The pooled output width
+  // Multiplicative spatial scale factor to translate ROI coords from their
+  // input scale to the scale used when pooling
+  optional float spatial_scale = 3 [default = 1];
+  optional float offset = 4 [default = 6];
+  optional uint32 output_dim = 5 [default = 201];
+  optional uint32 group_size = 6 [default = 7];
+  optional float extend_scale = 7 [default = 1.5];
+  optional float shrink_scale = 8 [default = 0.6];
 }

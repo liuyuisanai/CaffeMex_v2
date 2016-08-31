@@ -108,6 +108,10 @@ classdef Solver < handle
     function snapshot(self, path)
         self.nets{1}.save(path);
     end
+    function savestate(self, snapshot_filename)
+        CHECK(ischar(snapshot_filename), 'snapshot_filename must be a string');
+        caffe_('solver_snapshot', self.hSolver_self, snapshot_filename);
+    end
     % add done
     
     function max_iter = max_iter(self)
