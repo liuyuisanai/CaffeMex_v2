@@ -379,6 +379,19 @@ static void solver_get_max_iter(MEX_ARGS) {
 	plhs[ 0 ] = mxCreateDoubleScalar(p2psync->solver()->max_iter());
 }
 
+static void solver_snapshot(MEX_ARGS){
+	mxCHECK(nrhs == 2 && mxIsStruct(prhs[ 0 ]) && mxIsChar(prhs[ 1 ]),
+		"Usage: caffe_('solver_restore', hSolver, snapshot_file)");
+	P2PSync<float>* p2psync = handle_to_ptr<P2PSync<float> >(prhs[ 0 ]);
+	char* snapshot_file = mxArrayToString(prhs[ 1 ]);
+	NetParameter net_param;
+	p2psync->solver()->net()->ToProto(&net_param, false);
+	WriteProtoToBinaryFile(net_param, snapshot_file);
+	p2psync->solver()->SnapshotSolverState(snapshot_file);
+	mxFree(snapshot_file);
+}
+
+
 // Usage: caffe_('solver_restore', hSolver, snapshot_file)
 static void solver_restore(MEX_ARGS) {
   mxCHECK(nrhs == 2 && mxIsStruct(prhs[0]) && mxIsChar(prhs[1]),
@@ -943,6 +956,7 @@ static handler_registry handlers[] = {
   { "solver_solve",                  solver_solve                   },
   { "solver_reshape_input", solver_reshape_input },
   { "solver_set_input", solver_set_input },
+  { "solver_snapshot", solver_snapshot},
   { "solver_step", solver_step },
   { "solver_test", solver_test },
   { "get_net",                       get_net                        },
