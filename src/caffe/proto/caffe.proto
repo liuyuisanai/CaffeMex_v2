@@ -965,7 +965,8 @@ message PowerParameter {
 }
 
 message PSROIPoolingParameter {
-  required float spatial_scale = 1; 
+  required float spatial_scale = 1;
+  optional float no_pad_shift = 4 [default = 0.0]; 
   required int32 output_dim = 2; // output channel number
   required int32 group_size = 3; // equal to pooled_size
 }
