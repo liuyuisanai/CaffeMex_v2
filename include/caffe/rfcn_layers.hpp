@@ -95,6 +95,7 @@ namespace caffe {
     int height_;
     int width_;
     int spatial_dim_;
+	int no_pad_shift_;
     int bbox_channels_;
 
     int roi_per_img_;
