@@ -1485,6 +1485,7 @@ message PSROIRegionPoolingParameter {
   // Multiplicative spatial scale factor to translate ROI coords from their
   // input scale to the scale used when pooling
   optional float spatial_scale = 3 [default = 1];
+  optional float no_pad_shift = 9 [default = 0];
   optional float offset = 4 [default = 6];
   optional uint32 output_dim = 5 [default = 201];
   optional uint32 group_size = 6 [default = 7];

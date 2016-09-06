@@ -24,7 +24,9 @@ namespace caffe {
     const vector<Blob<Dtype>*>& top){
     PSROIPoolingParameter psroi_pooling_param = this->layer_param_.psroi_pooling_param();
     spatial_scale_ = psroi_pooling_param.spatial_scale();
+	no_pad_shift_ = psroi_pooling_param.no_pad_shift();
     LOG(INFO) << "Spatial scale: " << spatial_scale_;
+	LOG(INFO) << "noPad Shift: " << no_pad_shift_;
 
     CHECK_GT(psroi_pooling_param.output_dim(), 0)
       << "output_dim must be > 0";
