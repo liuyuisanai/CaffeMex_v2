@@ -110,6 +110,7 @@ namespace caffe {
     const int* mapping_channel,
     const int num_rois,
     const Dtype spatial_scale,
+	const int no_pad_shift_,
     const int channels,
     const int height, const int width,
     const int pooled_height, const int pooled_width,
@@ -125,10 +126,11 @@ namespace caffe {
 			// [start, end) interval for spatial sampling
       bottom_rois += n * 5;
       int roi_batch_ind = bottom_rois[0];
-      Dtype roi_start_w = static_cast<Dtype>(round(bottom_rois[1])) * spatial_scale;
-      Dtype roi_start_h = static_cast<Dtype>(round(bottom_rois[2])) * spatial_scale;
-      Dtype roi_end_w = static_cast<Dtype>(round(bottom_rois[3]) + 1.) * spatial_scale;
-      Dtype roi_end_h = static_cast<Dtype>(round(bottom_rois[4]) + 1.) * spatial_scale;
+	  Dtype roi_start_w = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 1 ] - no_pad_shift_) )) * spatial_scale, width-1.0);
+	  Dtype roi_start_h = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 2 ] - no_pad_shift_) )) * spatial_scale, height - 1.0);
+	  Dtype roi_end_w = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 3 ] - no_pad_shift_) + 1. )) * spatial_scale, width - 1.0);
+	  Dtype roi_end_h = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 4 ] - no_pad_shift_) + 1. )) * spatial_scale, height - 1.0);
+
 
       // Force too small ROIs to be 1x1
       Dtype roi_width = max(roi_end_w - roi_start_w, 0.1); //avoid 0
@@ -185,7 +187,7 @@ namespace caffe {
     // NOLINT_NEXT_LINE(whitespace/operators)
     PSROIPoolingBackwardAtomic<Dtype> << <CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS >> >(
       count, top_diff, mapping_channel_ptr, top[0]->num(), spatial_scale_,
-      channels_, height_, width_, pooled_height_, pooled_width_, output_dim_,
+      no_pad_shift_, channels_, height_, width_, pooled_height_, pooled_width_, output_dim_,
       bottom_diff, bottom_rois);
     CUDA_POST_KERNEL_CHECK;
   }
