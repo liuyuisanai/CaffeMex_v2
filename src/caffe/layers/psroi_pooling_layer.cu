@@ -39,8 +39,8 @@ namespace caffe {
       // [start, end) interval for spatial sampling
       bottom_rois += n * 5;
       int roi_batch_ind = bottom_rois[0];
-	  Dtype roi_start_w = min(max(0.1, static_cast<Dtype>( round(bottom_rois[ 1 ] - no_pad_shift_) )) * spatial_scale, width-1.0);
-	  Dtype roi_start_h = min(max(0.1, static_cast<Dtype>( round(bottom_rois[ 2 ] - no_pad_shift_) )) * spatial_scale, height - 1.0);
+	  Dtype roi_start_w = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 1 ] - no_pad_shift_) )) * spatial_scale, width-1.0);
+	  Dtype roi_start_h = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 2 ] - no_pad_shift_) )) * spatial_scale, height - 1.0);
 	  Dtype roi_end_w = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 3 ] - no_pad_shift_) + 1. )) * spatial_scale, width - 1.0);
 	  Dtype roi_end_h = min(max(0.0, static_cast<Dtype>( round(bottom_rois[ 4 ] - no_pad_shift_) + 1. )) * spatial_scale, height - 1.0);
 
