@@ -33,6 +33,8 @@ Bug report: liuyu@sensetime.com
 ```
 #!/usr/bin/env sh
 MV2_USE_CUDA=1 MV2_ENABLE_AFFINITY=0 MV2_SMP_USE_CMA=0 srun --gres=gpu:4 -n1 --ntasks-per-node=1 --kill-on-bad-exit=1 matlab -nodisplay -r "run /FULL/PATH/TO/YOUR/MATLAB/SCRIPT.m"
+
 ```
 
-3. run the shell script.
+
+3.Run the shell script.
