@@ -386,7 +386,6 @@ message LayerParameter {
   optional InputParameter input_param = 143;
   optional LogParameter log_param = 134;
   optional LRNParameter lrn_param = 118;
-  optional MaskParameter mask_param = 190;
   optional MemoryDataParameter memory_data_param = 119;
   optional MVNParameter mvn_param = 120;
   optional NormalizeParameter normalize_param = 147;

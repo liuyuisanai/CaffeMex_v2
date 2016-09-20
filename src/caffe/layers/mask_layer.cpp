@@ -24,7 +24,7 @@ namespace caffe {
 		w_ = bottom[ 0 ]->width();
 		h_ = bottom[ 0 ]->height();
 		vector<int> top_shape;
-		Dtype* mask = bottom[ 1 ]->cpu_data();
+		const Dtype* mask = bottom[ 1 ]->cpu_data();
 		validnum_ = caffe_cpu_asum(bottom[ 1 ]->count(), mask);
 		top[ 0 ]->Reshape(n_, c_, validnum_, 1);
 		pass_idx_.Reshape(1, 1, validnum_, 1);
@@ -33,8 +33,8 @@ namespace caffe {
 	template <typename Dtype>
 	void MaskLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
-		Dtype* mask = bottom[ 1 ]->cpu_data();
-		Dtype* bottom_data = bottom[ 0 ]->cpu_data();
+		const Dtype* mask = bottom[ 1 ]->cpu_data();
+		const Dtype* bottom_data = bottom[ 0 ]->cpu_data();
 		Dtype* top_data = top[ 0 ]->mutable_cpu_data();
 		int idx = 0;
 		for ( int y = 0; y < h_; y++ ){
@@ -45,6 +45,7 @@ namespace caffe {
 					{
 						top_data[ c*validnum_ + idx ] = bottom_data[ c*w_*h_ + y*w_ + x ];
 					}
+					idx++;
 				}
 				else{
 
@@ -55,10 +56,10 @@ namespace caffe {
 
 	template <typename Dtype>
 	void MaskLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& bottom,
-		const vector<Blob<Dtype>*>& top) {
-		Dtype* bottom_diff = bottom[ 0 ]->cpu_diff();
-		Dtype* mask = bottom[ 1 ]->cpu_data();
-		Dtype* top_diff = top[ 0 ]->cpu_diff();
+		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& top) {
+		Dtype* bottom_diff = bottom[ 0 ]->mutable_cpu_diff();
+		const Dtype* mask = bottom[ 1 ]->cpu_data();
+		const Dtype* top_diff = top[ 0 ]->cpu_diff();
 		int idx = 0;
 		for ( int y = 0; y < h_; y++ ){
 			for ( int x = 0; x < w_; x++ ){
@@ -68,6 +69,7 @@ namespace caffe {
 					{
 						bottom_diff[ c*w_*h_ + y*w_ + x ] = top_diff[ c*validnum_ + idx ];
 					}
+					idx++;
 				}
 				else{
 
