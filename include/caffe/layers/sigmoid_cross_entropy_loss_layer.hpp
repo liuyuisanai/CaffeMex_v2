@@ -46,8 +46,11 @@ class SigmoidCrossEntropyLossLayer : public LossLayer<Dtype> {
  public:
   explicit SigmoidCrossEntropyLossLayer(const LayerParameter& param)
       : LossLayer<Dtype>(param),
-          sigmoid_layer_(new SigmoidLayer<Dtype>(param)),
-          sigmoid_output_(new Blob<Dtype>()) {}
+          sigmoid_output_(new Blob<Dtype>()) {
+		  LayerParameter param_t = param;
+		  param_t.clear_loss_weight();
+		  sigmoid_layer_.reset(new SigmoidLayer<Dtype>(param_t));
+	  }
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,

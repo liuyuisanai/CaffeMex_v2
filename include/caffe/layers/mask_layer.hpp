@@ -40,7 +40,7 @@ namespace caffe {
 			//const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 		Blob<int> pass_idx_;
 		int n_, w_, h_, c_, validnum_;
-
+		bool init_;
 	};
 
 }  // namespace caffe

@@ -14,7 +14,10 @@ __global__ void SigmoidForward(const int n, const Dtype* in, Dtype* out) {
 
 template <typename Dtype>
 void SigmoidLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+	const vector<Blob<Dtype>*>& top) {
+	if ( bottom[ 0 ]->count() < 1 ){
+		return;
+	}
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
@@ -43,6 +46,9 @@ void SigmoidLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
   if (propagate_down[0]) {
+	  if ( bottom[ 0 ]->count() < 1 ){
+		  return;
+	  }
     const Dtype* top_data = top[0]->gpu_data();
     const Dtype* top_diff = top[0]->gpu_diff();
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();

@@ -28,6 +28,10 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Reshape(
 template <typename Dtype>
 void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+	if ( bottom[ 0 ]->count() < 1 ){
+			top[ 0 ]->mutable_cpu_data()[ 0 ] = Dtype(0);
+			return;
+		}
   // The forward pass computes the sigmoid outputs.
   sigmoid_bottom_vec_[0] = bottom[0];
   sigmoid_layer_->Forward(sigmoid_bottom_vec_, sigmoid_top_vec_);
@@ -54,6 +58,9 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
+	  if ( bottom[ 0 ]->count() < 1 ){
+		  return;
+	  }
     // First, compute the diff
     const int count = bottom[0]->count();
     const int num = bottom[0]->num();

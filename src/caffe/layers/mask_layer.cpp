@@ -9,6 +9,7 @@ namespace caffe {
 		const vector<Blob<Dtype>*>& top) {
 		CHECK_NE(top[ 0 ], bottom[ 0 ]) << this->type() << " Layer does not "
 			"allow in-place computation.";
+		init_ = false;
 	}
 
 	template <typename Dtype>
@@ -26,13 +27,16 @@ namespace caffe {
 		vector<int> top_shape;
 		const Dtype* mask = bottom[ 1 ]->cpu_data();
 		validnum_ = caffe_cpu_asum(bottom[ 1 ]->count(), mask);
-		top[ 0 ]->Reshape(n_, c_, validnum_, 1);
-		pass_idx_.Reshape(1, 1, validnum_, 1);
+		top[ 0 ]->Reshape(n_ * validnum_, c_, 1, 1);
+		pass_idx_.Reshape(validnum_, 1, 1, 1);
 	}
 
 	template <typename Dtype>
 	void MaskLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
+		if ( validnum_ < 1 ){
+			return;
+		}
 		const Dtype* mask = bottom[ 1 ]->cpu_data();
 		const Dtype* bottom_data = bottom[ 0 ]->cpu_data();
 		Dtype* top_data = top[ 0 ]->mutable_cpu_data();
@@ -43,7 +47,7 @@ namespace caffe {
 				{
 					for ( int c = 0; c < c_; c++ )
 					{
-						top_data[ c*validnum_ + idx ] = bottom_data[ c*w_*h_ + y*w_ + x ];
+						top_data[ idx * c_ + c ] = bottom_data[ c*w_*h_ + y*w_ + x ];
 					}
 					idx++;
 				}
@@ -55,27 +59,35 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void MaskLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& bottom,
-		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& top) {
+	void MaskLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
 		Dtype* bottom_diff = bottom[ 0 ]->mutable_cpu_diff();
 		const Dtype* mask = bottom[ 1 ]->cpu_data();
-		const Dtype* top_diff = top[ 0 ]->cpu_diff();
-		int idx = 0;
-		for ( int y = 0; y < h_; y++ ){
-			for ( int x = 0; x < w_; x++ ){
-				if ( mask[ y*w_ + x ] >= 1 )
-				{
-					for ( int c = 0; c < c_; c++ )
+		if ( validnum_ >= 1 ){
+			int idx = 0;
+			const Dtype* top_diff = top[ 0 ]->cpu_diff();
+			for ( int y = 0; y < h_; y++ ){
+				for ( int x = 0; x < w_; x++ ){
+					if ( mask[ y*w_ + x ] >= 1 )
 					{
-						bottom_diff[ c*w_*h_ + y*w_ + x ] = top_diff[ c*validnum_ + idx ];
+						for ( int c = 0; c < c_; c++ )
+						{
+							bottom_diff[ c*w_*h_ + y*w_ + x ] = top_diff[ idx * c_ + c ];
+						}
+						idx++;
 					}
-					idx++;
-				}
-				else{
-
+					else{
+						for ( int c = 0; c < c_; c++ )
+						{
+							bottom_diff[ c*w_*h_ + y*w_ + x ] = Dtype(0);
+						}
+					}
 				}
 			}
 		}
+		else{
+			caffe_set(bottom[ 0 ]->count(), Dtype(0), bottom_diff);
+		}	
 	}
 
 	INSTANTIATE_CLASS(MaskLayer);

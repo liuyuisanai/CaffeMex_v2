@@ -52,6 +52,10 @@ namespace caffe {
 	void SmoothL1LossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
 		int count = bottom[0]->count();
+		if ( count < 1 ){
+			top[ 0 ]->mutable_cpu_data()[ 0 ] = Dtype(0);
+			return;
+		}
 		caffe_gpu_sub(
 			count,
 			bottom[0]->gpu_data(),
@@ -105,6 +109,9 @@ namespace caffe {
 	void SmoothL1LossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
 		int count = diff_.count();
+		if ( count < 1 ){
+			return;
+		}
 		SmoothL1BackwardGPU<Dtype> << <CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS >> >(
 			count, diff_.gpu_data(), diff_.mutable_gpu_data());
 		CUDA_POST_KERNEL_CHECK;
