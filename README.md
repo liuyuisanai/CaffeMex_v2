@@ -1,11 +1,17 @@
 # CaffeMex 
-v2.1: 
+v2.2: 
 
-A multiple-GPU version of MATLAB Caffe on LINUX and WINDOWS
+A ___multi-GPU___ & ___memory-reduced___ ___MAT___-Caffe on ___LINUX and WINDOWS___
 
-For now it is an unstable version
+For now it ~~is an unstable version~~ has worked well in plenty of works.
 
-Bug report: liuyu@sensetime.com
+Bug report: liuyu@sensetime.com or liuyuisanai@gmail.com
+## What's New in Version 2.2?
+
+1.Reduce 30% GPU memory!
+
+2.Support running on sensetime's cluster!
+
 ## Installation for LINUX
 
 1.cp Makefile.config.example Makefile.config and customize your own config.
