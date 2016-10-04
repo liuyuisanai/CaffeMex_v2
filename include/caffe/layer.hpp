@@ -324,6 +324,8 @@ class Layer {
     phase_ = phase;
   }
 
+  virtual inline bool is_sharing_diff(int top_id, int bottom_id){ return false; }
+  virtual inline bool is_sharing_data(int top_id, int bottom_id){ return false; }
  protected:
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;

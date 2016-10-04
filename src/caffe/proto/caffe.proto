@@ -91,6 +91,9 @@ message NetParameter {
   // connectivity and behavior, is specified as a LayerParameter.
   repeated LayerParameter layer = 100;  // ID 100 so layers are printed last.
 
+  // The configuration of memory optimization
+  optional MemoryOptimizationParameter mem_param = 200;
+
   // DEPRECATED: use 'layer' instead.
   repeated V1LayerParameter layers = 2;
 }
@@ -320,7 +323,6 @@ message LayerParameter {
   // Each layer assigns a default value, usually of either 0 or 1,
   // to each top blob.
   repeated float loss_weight = 5;
-
   // Specifies training parameters (multipliers on global learning constants,
   // and the name and other settings used for weight sharing).
   repeated ParamSpec param = 6;
@@ -907,6 +909,22 @@ message MemoryDataParameter {
   optional uint32 channels = 2;
   optional uint32 height = 3;
   optional uint32 width = 4;
+}
+
+message MemoryOptimizationParameter {
+  // Mode of optimization
+
+  // whether to optimize for all nets specified in train phase
+  optional bool optimize_train = 1 [default = true];
+
+  // whether to optimize for all nets specified in test phase
+  optional bool optimize_test = 2 [default = false];
+
+  // By default, all blobs for input and output are excluded from the optimization for safety.
+  // However, one can also claim a few blobs to be excluded.
+  // This is rather helpful when extracting features from intermediate blobs or debugging problems.
+  repeated string exclude_blob = 3;
+
 }
 
 message MVNParameter {

@@ -262,6 +262,8 @@ class Net {
   /// @brief Helper for displaying debug info in Update.
   void UpdateDebugInfo(const int param_id);
 
+  void MemoryOptimize();
+
   /// @brief The network name
   string name_;
   /// @brief The phase: TRAIN or TEST
@@ -319,6 +321,11 @@ class Net {
   size_t memory_used_;
   /// Whether to compute and display debug info for the net.
   bool debug_info_;
+
+  /// Memory optimization related stuff.
+  vector< shared_ptr<SyncedMemory> > shared_storage_;
+  std::set<string> excluded_blob_names_;
+
   /// The root net that actually holds the shared layers in data parallelism
   const Net* const root_net_;
   DISABLE_COPY_AND_ASSIGN(Net);

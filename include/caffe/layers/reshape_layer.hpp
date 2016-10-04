@@ -28,7 +28,12 @@ class ReshapeLayer : public Layer<Dtype> {
   virtual inline const char* type() const { return "Reshape"; }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
-
+  virtual inline bool is_sharing_diff(int top_id, int bottom_id) {
+	  return top_id == bottom_id;
+  }
+  virtual inline bool is_sharing_data(int top_id, int bottom_id) {
+	  return top_id == bottom_id;
+  }
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {}
