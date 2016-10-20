@@ -372,6 +372,7 @@ message LayerParameter {
   optional ConvolutionParameter convolution_param = 106;
   optional CropParameter crop_param = 144;
   optional DataParameter data_param = 107;
+  optional DeltaToCoordinateParameter delta_to_coordinate_param = 200;
   optional DropoutParameter dropout_param = 108;
   optional DummyDataParameter dummy_data_param = 109;
   optional EltwiseParameter eltwise_param = 110;
@@ -392,6 +393,7 @@ message LayerParameter {
   optional MVNParameter mvn_param = 120;
   optional NormalizeParameter normalize_param = 147;
   optional ParameterParameter parameter_param = 145;
+  optional PointFocusParameter  point_focus_param = 201;
   optional PointPoolingParameter point_pooling_param = 149;
   optional PoolingParameter pooling_param = 121;
   optional PowerParameter power_param = 122;
@@ -413,8 +415,10 @@ message LayerParameter {
   optional TanHParameter tanh_param = 127;
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
+  optional TripletLossParameter triplet_loss_param = 160;
   optional WindowDataParameter window_data_param = 129;
 }
+
 
 // Message that stores parameters used to apply transformation
 // to the data layer's data
@@ -472,6 +476,10 @@ message LossParameter {
 
 // Messages that store parameters used by individual layer types follow, in
 // alphabetical order.
+message TripletLossParameter {
+  //margin for negative triplet
+  optional float margin = 1 [default = 1.0];
+}
 
 message AccuracyParameter {
   // When computing accuracy, count as correct by comparing the true label to
@@ -814,6 +822,18 @@ message HingeLossParameter {
   optional Norm norm = 1 [default = L1];
 }
 
+
+message PointFocusParameter {
+  optional uint32 stride = 2 [default = 8];
+  optional float anchor_bias = 3 [default = 3.5];
+}
+
+message DeltaToCoordinateParameter {
+  optional float threshold = 1 [default = 0.0];
+  optional uint32 stride = 2 [default = 8];
+  optional float anchor_bias = 3 [default = 3.5];
+}
+
 message ImageDataParameter {
   // Specify the data source.
   optional string source = 1;
@@ -1119,6 +1139,7 @@ message ReshapeParameter {
   //
   optional int32 axis = 2 [default = 0];
   optional int32 num_axes = 3 [default = -1];
+  optional int32 default_insert = 4 [default = 1];
 }
 
 message ScaleParameter {
