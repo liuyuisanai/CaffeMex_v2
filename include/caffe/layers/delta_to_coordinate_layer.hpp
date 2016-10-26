@@ -21,7 +21,7 @@ class DeltaToCoordinateLayer : public Layer<Dtype> {
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "DeltaToCoordinate"; }
-  virtual inline int ExactNumBottomBlobs() const { return 6; }
+  virtual inline int ExactNumBottomBlobs() const { return 7; }
   virtual inline int ExactNumTopBlobs() const { return 3; }
 
  protected:
@@ -34,8 +34,9 @@ class DeltaToCoordinateLayer : public Layer<Dtype> {
 //  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
 //     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  float thresh_, anchor_bias_;
+  float thresh_, anchor_bias_, thresh_reg_;
   int stride_, valid_num_, w_, h_;
+  bool posdata_;
 };
 
 }  // namespace caffe

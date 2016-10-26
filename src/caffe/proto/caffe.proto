@@ -829,9 +829,10 @@ message PointFocusParameter {
 }
 
 message DeltaToCoordinateParameter {
-  optional float threshold = 1 [default = 0.0];
+  optional float threshold_cls = 1 [default = 0.0];
   optional uint32 stride = 2 [default = 8];
   optional float anchor_bias = 3 [default = 3.5];
+  optional float threshold_reg = 4 [default = 0.2];
 }
 
 message ImageDataParameter {

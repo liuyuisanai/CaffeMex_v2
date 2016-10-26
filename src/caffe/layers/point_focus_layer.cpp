@@ -18,6 +18,8 @@ void PointFocusLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   CHECK_EQ(bottom[0]->channels(), bottom[1]->channels()*2) << "Points number and channels of feature map mismatch";
   top[ 0 ]->Reshape(bottom[0]->num(), bottom[ 1 ]->channels(), 1, 1);
+  //cnt_.resize(bottom[ 1]->count());
+  //std::fill(cnt_.begin(), cnt_.end(), 0);
 }
 
 template <typename Dtype>
@@ -38,6 +40,7 @@ void PointFocusLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			x = std::max(std::min(x, w - 1), 0);
 			y = std::max(std::min(y, h - 1), 0);
 			fm_out[i*bottom[ 1 ]->channels()+j] = fm_in[j*w*h+y*w+x];
+			//cnt_[ j*w*h + y*w + x ] += 1;
 		}
 	}
 }
@@ -54,15 +57,15 @@ void PointFocusLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 	caffe_set(bottom[ 1 ]->count(), Dtype(0), fm_in_diff);
 	int w = bottom[ 1 ]->width();
 	int h = bottom[ 1 ]->height();
-	for ( int i = 0; i < bottom[ 0 ]->num(); ++i ){
+	/*for ( int i = 0; i < bottom[ 0 ]->num(); ++i ){
 		for (int j = 0; j < bottom[ 1 ]->channels(); ++j){
 			int x = round((pts[i*bottom[ 0 ]->channels()+2*j]-(stride_-1.0)/2.0)/stride_);
 			int y = round((pts[i*bottom[ 0 ]->channels()+2*j+1]-(stride_-1.0)/2.0)/stride_);
 			x = std::max(std::min(x, w - 1), 0);
 			y = std::max(std::min(y, h - 1), 0);
-			fm_in_diff[ j*w*h + y*w + x ] = fm_out_diff[ i*bottom[ 1 ]->channels() + j ];
+			fm_in_diff[ j*w*h + y*w + x ] += fm_out_diff[ i*bottom[ 1 ]->channels() + j ];
 		}
-	}
+	}*/
 }
 
 INSTANTIATE_CLASS(PointFocusLayer);

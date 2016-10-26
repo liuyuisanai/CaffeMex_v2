@@ -9,6 +9,7 @@ namespace caffe {
   // bottom[3]: anchor pts
   // bottom[4]: mask
   // bottom[5]: label map
+  // bottom[6]: masked reg loss
   // top[0]: pts coordinate
   // top[1]: score
   // top[2]: label
@@ -16,9 +17,10 @@ namespace caffe {
 template <typename Dtype>
 void DeltaToCoordinateLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
-	thresh_ = this->layer_param_.delta_to_coordinate_param().threshold();
+	thresh_ = this->layer_param_.delta_to_coordinate_param().threshold_cls();
 	stride_ = this->layer_param_.delta_to_coordinate_param().stride();
 	anchor_bias_ = this->layer_param_.delta_to_coordinate_param().anchor_bias();
+	thresh_reg_ = this->layer_param_.delta_to_coordinate_param().threshold_reg();
 }
 
 template <typename Dtype>
@@ -33,16 +35,45 @@ void DeltaToCoordinateLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   CHECK_EQ(bottom[ 4 ]->channels(), 1) << "Mask size should be [1 1 h w]";
   CHECK_EQ(bottom[ 0 ]->count(), bottom[ 4 ]->count());
   CHECK_EQ(bottom[ 0 ]->count(), bottom[ 5 ]->count());
-  const Dtype* clsmap = bottom[ 0 ]->cpu_data();
-  const Dtype* mask = bottom[ 4 ]->cpu_data();
-  int tot = bottom[0]->count();
-  w_ = bottom[ 0 ]->width();
-  h_ = bottom[ 0 ]->height();
   valid_num_ = 0;
-  for (int i = 0; i < tot; ++i){
-	  if ( clsmap[ i ] >= thresh_ && mask[ i ] > 0 )
-		++valid_num_;
+  if ( bottom[ 6 ]->count() >= 1 ){
+	  posdata_ = true;
+	  const Dtype* clsmap = bottom[ 0 ]->cpu_data();
+	  const Dtype* mask = bottom[ 4 ]->cpu_data();
+	  const Dtype* reg_loss = bottom[ 6 ]->cpu_data();
+	  int tot = bottom[ 0 ]->count();
+	  w_ = bottom[ 0 ]->width();
+	  h_ = bottom[ 0 ]->height();
+	  int mask_cnt = -1;
+	  for ( int i = 0; i < tot; ++i ){
+		  if ( mask[ i ] > 0 )
+			  ++mask_cnt;
+		  else
+			  continue;
+		  if ( clsmap[ i ] >= thresh_ && reg_loss[ mask_cnt ] <= thresh_reg_ ){
+			  ++valid_num_;
+		  }
+	  }
   }
+  else{
+	  posdata_ = false;
+	  const Dtype* clsmap = bottom[ 0 ]->cpu_data();
+	  const Dtype* mask = bottom[ 4 ]->cpu_data();
+	  int tot = bottom[ 0 ]->count();
+	  w_ = bottom[ 0 ]->width();
+	  h_ = bottom[ 0 ]->height();
+	  int mask_cnt = -1;
+	  for ( int i = 0; i < tot; ++i ){
+		  if ( mask[ i ] > 0 )
+			  ++mask_cnt;
+		  else
+			  continue;
+		  if ( clsmap[ i ] >= thresh_ ){
+			  ++valid_num_;
+		  }
+	  }
+  }
+  //LOG(INFO) << "valid_ = " << valid_num_;
   top[ 0 ]->Reshape(valid_num_, bottom[ 1 ]->channels(), 1, 1);
   top[ 1 ]->Reshape(valid_num_, 1, 1, 1);
   top[ 2 ]->Reshape(valid_num_, 1, 1, 1);
@@ -60,6 +91,8 @@ void DeltaToCoordinateLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
 	const Dtype* anchor_pts = bottom[ 3 ]->cpu_data();
 	const Dtype* mask = bottom[ 4 ]->cpu_data();
 	const Dtype* labelmap = bottom[ 5 ]->cpu_data();
+	if (posdata_ )
+		const Dtype* reg_loss = bottom[ 6 ]->cpu_data();
 	Dtype* pts_coordinate = top[ 0 ]->mutable_cpu_data();
 	Dtype* score = top[ 1 ]->mutable_cpu_data();
 	Dtype* label = top[ 2 ]->mutable_cpu_data();
@@ -69,10 +102,20 @@ void DeltaToCoordinateLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
 	std::vector<Dtype> anchor_pts_now(bottom[ 1 ]->channels());
 
 	anchor_box_size[ 0 ] = anchor_rect[ 2 ] - anchor_rect[ 0 ];
-	anchor_box_size[ 0 ] = anchor_rect[ 3 ] - anchor_rect[ 1 ];
+	anchor_box_size[ 1 ] = anchor_rect[ 3 ] - anchor_rect[ 1 ];
+
+	int mask_cnt = -1;
 
 	for ( int i = 0; i < bottom[ 0 ]->count(); ++i ){
-		if ( clsmap[ i ] >= thresh_ && mask[i] > 0){
+		if ( mask[ i ] > 0 )
+			++mask_cnt;
+		else
+			continue;
+		if ( clsmap[ i ] >= thresh_ ){
+			if ( posdata_ && bottom[ 6 ]->cpu_data()[ mask_cnt ] > thresh_reg_ ){
+				continue;
+			}
+				
 			int y = floor(i / w_);
 			int x = i % w_;
 			anchor_center_now[ 0 ] = x*stride_ + anchor_bias_;
@@ -82,6 +125,7 @@ void DeltaToCoordinateLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bott
 				anchor_pts_now[ j * 2 + 1 ] = anchor_pts[ j * 2 + 1 ] * anchor_box_size[ 1 ] + anchor_center_now[ 1 ];
 				pts_coordinate[ cnt*top[ 0 ]->channels() + j * 2 ] = deltamap[ j * 2 * w_*h_ + y*w_ + x ] * anchor_box_size[ 0 ] + anchor_pts_now[ j * 2 ];
 				pts_coordinate[ cnt*top[ 0 ]->channels() + j * 2 + 1 ] = deltamap[ ( j * 2 + 1 ) * w_*h_ + y*w_ + x ] * anchor_box_size[ 1 ] + anchor_pts_now[ j * 2 + 1 ];
+				//LOG(INFO) << "[delta_x delta_y anchor_box anchor_pts pts] = " << deltamap[ j * 2 * w_*h_ + y*w_ + x ] << " " << deltamap[ ( j * 2 + 1 ) * w_*h_ + y*w_ + x ] << " " << anchor_box_size[ 0 ] << " " << anchor_box_size[ 1 ] << " " << anchor_pts_now[ j * 2 ] << " " << anchor_pts_now[ j * 2 + 1 ] << " " << pts_coordinate[ cnt*top[ 0 ]->channels() + j * 2 ] << " " << pts_coordinate[ cnt*top[ 0 ]->channels() + j * 2 + 1 ];
 			}
 			score[ cnt ] = clsmap[ i ];
 			label[ cnt ] = labelmap[ i ];

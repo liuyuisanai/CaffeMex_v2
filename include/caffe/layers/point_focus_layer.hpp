@@ -35,6 +35,7 @@ class PointFocusLayer : public Layer<Dtype> {
 //      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
   int stride_;
+  std::vector<int> cnt_;
 };
 
 }  // namespace caffe
