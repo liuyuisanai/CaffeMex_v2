@@ -5,7 +5,7 @@
         <BuildDir>$(SolutionDir)..\Build</BuildDir>
         <!--NOTE: CpuOnlyBuild and UseCuDNN flags can't be set at the same time.-->
         <CpuOnlyBuild>false</CpuOnlyBuild>
-        <UseCuDNN>false</UseCuDNN>
+        <UseCuDNN>true</UseCuDNN>
         <CudaVersion>7.5</CudaVersion>
         <!-- NOTE: If Python support is enabled, PythonDir (below) needs to be
          set to the root of your Python installation. If your Python installation
@@ -18,10 +18,10 @@
 
         <!-- Set CUDA architecture suitable for your GPU.
          Setting proper architecture is important to mimize your run and compile time. -->
-        <CudaArchitecture>compute_35,sm_35;compute_52,sm_52</CudaArchitecture>
+        <CudaArchitecture>compute_52,sm_52</CudaArchitecture>
 
         <!-- CuDNN 3 and 4 are supported -->
-        <CuDnnPath></CuDnnPath>
+        <CuDnnPath>c:/cudnnv4</CuDnnPath>
         <ScriptsDir>$(SolutionDir)\scripts</ScriptsDir>
     </PropertyGroup>
     <PropertyGroup Condition="'$(CpuOnlyBuild)'=='false'">
