@@ -380,6 +380,7 @@ message LayerParameter {
   optional EmbedParameter embed_param = 137;
   optional ExpParameter exp_param = 111;
   optional FlattenParameter flatten_param = 135;
+  optional GateParameter gate_param = 123321;
   optional HDF5DataParameter hdf5_data_param = 112;
   optional HDF5OutputParameter hdf5_output_param = 113;
   optional HingeLossParameter hinge_loss_param = 114;
@@ -420,6 +421,10 @@ message LayerParameter {
   optional WindowDataParameter window_data_param = 129;
 }
 
+
+message GateParameter {
+  optional uint32 active_val = 1 [default = 1];
+}
 
 // Message that stores parameters used to apply transformation
 // to the data layer's data

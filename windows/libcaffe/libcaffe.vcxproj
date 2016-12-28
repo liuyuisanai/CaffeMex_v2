@@ -90,6 +90,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <MinimalRebuild>false</MinimalRebuild>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <FloatingPointModel>Precise</FloatingPointModel>
     </ClCompile>
     <Lib>
       <AdditionalOptions>/ignore:4221 %(AdditionalOptions)</AdditionalOptions>
@@ -141,6 +142,7 @@
     <ClCompile Include="..\..\src\caffe\layers\exp_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\filter_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\flatten_layer.cpp" />
+    <ClCompile Include="..\..\src\caffe\layers\gate_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\gaussian_noise_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\hdf5_data_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\hdf5_output_layer.cpp" />
@@ -260,6 +262,7 @@
     <ClInclude Include="..\..\include\caffe\layers\exp_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\filter_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\flatten_layer.hpp" />
+    <ClInclude Include="..\..\include\caffe\layers\gate_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\gaussian_noise_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\hdf5_data_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\hdf5_output_layer.hpp" />
@@ -398,6 +401,7 @@
     <CudaCompile Include="..\..\src\caffe\layers\box_annotator_ohem_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\conv_data_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\divergence_loss_layer.cu" />
+    <CudaCompile Include="..\..\src\caffe\layers\gate_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\gaussian_noise_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\mask_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\normalize_layer.cu" />
