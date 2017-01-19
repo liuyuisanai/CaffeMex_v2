@@ -390,6 +390,9 @@
     <ClCompile Include="..\..\src\caffe\layers\gate_layer.cpp">
       <Filter>src\layers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\caffe\layers\gaussian_sample_layer.cpp">
+      <Filter>src\layers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\caffe\proto\caffe.pb.h">
@@ -722,12 +725,6 @@
     <ClInclude Include="..\..\include\caffe\layers\normalize_layer.hpp">
       <Filter>include\layers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\caffe\layers\bn_data_layer.hpp">
-      <Filter>src\layers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\caffe\layers\conv_data_layer.hpp">
-      <Filter>src\layers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\caffe\layers\upsample_layer.hpp">
       <Filter>include\layers</Filter>
     </ClInclude>
@@ -741,6 +738,12 @@
       <Filter>include\layers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\caffe\layers\gate_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\conv_data_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\gaussian_sample_layer.hpp">
       <Filter>include\layers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -962,6 +965,9 @@
       <Filter>cu\layers</Filter>
     </CudaCompile>
     <CudaCompile Include="..\..\src\caffe\layers\gate_layer.cu">
+      <Filter>cu\layers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\src\caffe\layers\gaussian_sample_layer.cu">
       <Filter>cu\layers</Filter>
     </CudaCompile>
   </ItemGroup>

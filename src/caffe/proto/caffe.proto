@@ -381,6 +381,7 @@ message LayerParameter {
   optional ExpParameter exp_param = 111;
   optional FlattenParameter flatten_param = 135;
   optional GateParameter gate_param = 123321;
+  optional SampleParameter sample_param = 123322;
   optional HDF5DataParameter hdf5_data_param = 112;
   optional HDF5OutputParameter hdf5_output_param = 113;
   optional HingeLossParameter hinge_loss_param = 114;
@@ -421,6 +422,12 @@ message LayerParameter {
   optional WindowDataParameter window_data_param = 129;
 }
 
+message SampleParameter {
+  optional uint32 number = 1 [default = 1];
+  optional float decay = 2 [default = 0.99];
+  optional FillerParameter scale_filler = 3; // The filler for the scale
+  optional FillerParameter shift_filler = 4; // The filler for the shift
+}
 
 message GateParameter {
   optional uint32 active_val = 1 [default = 1];
