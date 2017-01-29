@@ -21,7 +21,7 @@
         <CudaArchitecture>compute_52,sm_52</CudaArchitecture>
 
         <!-- CuDNN 3 and 4 are supported -->
-        <CuDnnPath>c:/cudnnv4</CuDnnPath>
+        <CuDnnPath>c:/cudnnv5</CuDnnPath>
         <ScriptsDir>$(SolutionDir)\scripts</ScriptsDir>
     </PropertyGroup>
     <PropertyGroup Condition="'$(CpuOnlyBuild)'=='false'">
