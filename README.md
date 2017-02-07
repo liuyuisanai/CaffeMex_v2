@@ -6,11 +6,13 @@ A ___multi-GPU___ & ___memory-reduced___ ___MAT___-Caffe on ___LINUX and WINDOWS
 For now it ~~is an unstable version~~ has worked well in plenty of works.
 
 Bug report: liuyu@sensetime.com or liuyuisanai@gmail.com
-## What's New in Version 2.2?
+## What's New in Version 2.3?
 
-1.Reduce 30% GPU memory!
+1.Reduce 30% GPU memory usage
 
-2.Support running on sensetime's cluster!
+2.More stable for detection task (fix 0-count issue in a few layers)
+
+3.Add center loss layer
 
 ## Installation for LINUX
 
@@ -24,7 +26,7 @@ Bug report: liuyu@sensetime.com or liuyuisanai@gmail.com
 
 1.Support both windows and linux platforms
 
-2.Support R-FCN
+2.Reduce 30% GPU memory usage
 
 3.Lastest Matlab interface
 

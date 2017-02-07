@@ -367,6 +367,7 @@ message LayerParameter {
   optional BiasParameter bias_param = 141;
   optional BNParameter bn_param = 146;
   optional BNHKParameter bnhk_param = 148;
+  optional CenterLossParameter center_loss_param = 111213;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -420,6 +421,15 @@ message LayerParameter {
   optional TripletLossParameter triplet_loss_param = 160;
   optional UpsampleParameter upsample_param = 12345;
   optional WindowDataParameter window_data_param = 129;
+}
+
+message CenterLossParameter {
+  optional uint32 num_output = 1; // The number of outputs for the layer
+  optional FillerParameter center_filler = 2; // The filler for the centers
+  // The first axis to be lumped into a single inner product computation;
+  // all preceding axes are retained in the output.
+  // May be negative to index from the end (e.g., -1 for the last axis).
+  optional int32 axis = 3 [default = 1];
 }
 
 message SampleParameter {
