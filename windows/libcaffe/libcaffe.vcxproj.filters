@@ -394,7 +394,7 @@
       <Filter>src\layers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\caffe\layers\center_loss_layer.cpp">
-      <Filter>include\layers</Filter>
+      <Filter>src\layers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
