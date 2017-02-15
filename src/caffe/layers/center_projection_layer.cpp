@@ -86,6 +86,7 @@ template <typename Dtype>
 void CenterProjectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
+  Dtype* top_data = bottom[0]->mutable_cpu_data();
   Dtype* weight_writable = this->blobs_[0]->mutable_cpu_data();
   const Dtype* weight = this->blobs_[0]->cpu_data();
   // Step 1: Normalize weight

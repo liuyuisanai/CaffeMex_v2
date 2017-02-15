@@ -11,6 +11,7 @@ void CenterProjectionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
+  Dtype* weight_writable = this->blobs_[0]->mutable_gpu_data();
   const Dtype* weight = this->blobs_[0]->gpu_data();
   if (M_ == 1) {
     caffe_gpu_gemv<Dtype>(CblasNoTrans, N_, K_, (Dtype)1.,
@@ -19,6 +20,16 @@ void CenterProjectionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
       caffe_gpu_axpy<Dtype>(N_, bias_multiplier_.cpu_data()[0],
                             this->blobs_[1]->gpu_data(), top_data);
   } else {
+	  // Step 1: Normalize weight
+	  Dtype* squared_data = squared_.mutable_gpu_data();
+	  caffe_gpu_powx(N_*K_, weight, Dtype(2), squared_data);
+	  Dtype normsqr;
+	  for (int i = 0; i<N_; ++i) {
+		  caffe_gpu_asum<Dtype>(K_, squared_data + i*K_, &normsqr);
+		  caffe_gpu_scale<Dtype>(K_, pow(normsqr, -0.5), weight + i*K_, weight_writable + i*K_);
+		  caffe_gpu_scale<Dtype>(K_, rescale_coeff_, weight + i*K_, weight_writable + i*K_);
+	  }
+	  // Step 2: Get projection
     caffe_gpu_gemm<Dtype>(CblasNoTrans,
                           transpose_ ? CblasNoTrans : CblasTrans,
                           M_, N_, K_, (Dtype)1.,
