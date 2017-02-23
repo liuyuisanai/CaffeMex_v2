@@ -57,6 +57,7 @@ class SigmoidCrossEntropyLossLayer : public LossLayer<Dtype> {
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "SigmoidCrossEntropyLoss"; }
+  virtual inline int ExactNumTopBlobs() const { return -1; }
 
  protected:
   /// @copydoc SigmoidCrossEntropyLossLayer
@@ -106,6 +107,9 @@ class SigmoidCrossEntropyLossLayer : public LossLayer<Dtype> {
   vector<Blob<Dtype>*> sigmoid_bottom_vec_;
   /// top vector holder to call the underlying SigmoidLayer::Forward
   vector<Blob<Dtype>*> sigmoid_top_vec_;
+  bool has_ignore_label_;
+  int ignore_label_, valid_num_;
+
 };
 
 }  // namespace caffe

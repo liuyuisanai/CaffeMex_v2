@@ -14,6 +14,12 @@ void SigmoidCrossEntropyLossLayer<Dtype>::LayerSetUp(
   sigmoid_top_vec_.clear();
   sigmoid_top_vec_.push_back(sigmoid_output_.get());
   sigmoid_layer_->SetUp(sigmoid_bottom_vec_, sigmoid_top_vec_);
+  has_ignore_label_ =
+	  this->layer_param_.loss_param().has_ignore_label();
+  if ( has_ignore_label_ ) {
+	  ignore_label_ = this->layer_param_.loss_param().ignore_label();
+  }
+  valid_num_ = 0;
 }
 
 template <typename Dtype>
@@ -43,10 +49,27 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
   const Dtype* target = bottom[1]->cpu_data();
   Dtype loss = 0;
   for (int i = 0; i < count; ++i) {
-    loss -= input_data[i] * (target[i] - (input_data[i] >= 0)) -
-        log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >= 0)));
+	  if ( target[ i ] == ignore_label_ )
+		  loss = 0;
+	  else{
+		  valid_num_+=1;
+		  loss -= input_data[ i ] * ( target[ i ] - ( input_data[ i ] >= 0 ) ) -
+			  log(1 + exp(input_data[ i ] - 2 * input_data[ i ] * ( input_data[ i ] >= 0 )));
+	  }
   }
   top[0]->mutable_cpu_data()[0] = loss / num;
+  if ( top.size() >= 2 ) {
+	  for ( int i = 0; i < count; ++i ){
+		  if ( target[ i ] == ignore_label_ ){
+			  top[ 1 ]->mutable_cpu_data()[ i ] = 0;
+		  }
+		  else{
+			  top[ 1 ]->mutable_cpu_data()[ i ] = -( input_data[ i ] * ( target[ i ] - ( input_data[ i ] >= 0 ) ) -
+				  log(1 + exp(input_data[ i ] - 2 * input_data[ i ] * ( input_data[ i ] >= 0 ))) );
+			  // Output per-instance loss
+		  }
+	  }
+  }
 }
 
 template <typename Dtype>

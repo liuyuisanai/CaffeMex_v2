@@ -15,6 +15,7 @@ void GaussianSampleLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   	channels_ = bottom[0]->channels();
 	number_ = this->layer_param().sample_param().number();
 	decay_ = this->layer_param().sample_param().decay();
+	scale_ = this->layer_param().sample_param().scale();
 
 	// Check if we need to set up the weights
 	if ( this->blobs_.size() > 0 ) {
@@ -92,7 +93,7 @@ void GaussianSampleLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		batch_dx_.mutable_cpu_data());
 // Step2. generate
 	// sum_multiplier_num_
-	caffe_rng_gaussian(top[ 0 ]->count(), Dtype(0), Dtype(1), top[0]->mutable_cpu_data());
+	caffe_rng_gaussian(top[ 0 ]->count(), Dtype(0), Dtype(1)*scale_, top[0]->mutable_cpu_data());
 	buffer_blob_.ReshapeLike(*top[0]);
 	caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, number_, channels_, 1, Dtype(-1),
 		sum_multiplier_num_.cpu_data(), batch_dx_.cpu_data(), Dtype(0),

@@ -422,6 +422,7 @@ message LayerParameter {
   optional UpsampleParameter upsample_param = 12345;
   optional WindowDataParameter window_data_param = 129;
   optional CenterProjectionParameter center_projection_param = 11092;
+  optional ClsOHEMParameter cls_ohem_param = 10947;
 }
 
 message CenterLossParameter {
@@ -433,11 +434,17 @@ message CenterLossParameter {
   optional int32 axis = 3 [default = 1];
 }
 
+message ClsOHEMParameter {
+	optional int32 topk = 1 [default = 128];
+	optional int32 ignore_label = 2 [default = -1];
+}
+
 message SampleParameter {
   optional uint32 number = 1 [default = 1];
   optional float decay = 2 [default = 0.99];
   optional FillerParameter scale_filler = 3; // The filler for the scale
   optional FillerParameter shift_filler = 4; // The filler for the shift
+  optional float scale = 5 [default = 1.0];
 }
 
 message GateParameter {

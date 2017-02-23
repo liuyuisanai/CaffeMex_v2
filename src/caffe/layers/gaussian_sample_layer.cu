@@ -49,7 +49,7 @@ void GaussianSampleLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 		batch_dx_.mutable_gpu_data());
 	// Step2. generate
 	// sum_multiplier_num_
-	caffe_gpu_rng_gaussian(top[ 0 ]->count(), Dtype(0), Dtype(1), top[ 0 ]->mutable_gpu_data());
+	caffe_gpu_rng_gaussian(top[ 0 ]->count(), Dtype(0), Dtype(1)*scale_, top[ 0 ]->mutable_gpu_data());
 	buffer_blob_.ReshapeLike(*top[ 0 ]);
 	caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, number_, channels_, 1, Dtype(-1),
 		sum_multiplier_num_.gpu_data(), batch_dx_.gpu_data(), Dtype(0),
