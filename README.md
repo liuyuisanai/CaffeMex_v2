@@ -1,5 +1,5 @@
 # CaffeMex 
-v2.2: 
+v2.3: 
 
 A ___multi-GPU___ & ___memory-reduced___ ___MAT___-Caffe on ___LINUX and WINDOWS___
 
@@ -21,18 +21,62 @@ Bug report: liuyu@sensetime.com or liuyuisanai@gmail.com
 2.make -j && make matcaffe
 ## Installation for WINDOWS
 
-1.Find 'windows/' and you will know.
+1.Find 'windows/' and you will know. Merged by R-FCN https://github.com/daijifeng001/R-FCN
 ## Feature
 
 1.Support both windows and linux platforms
 
-2.Reduce 30% GPU memory usage
+2.Reduce 30% GPU memory usage (by merging Yuanjun Xiong's caffe http://yjxiong.me/)
 
 3.Lastest Matlab interface
 
 4.Compatible with original caffe
 
-## Run on cluster
+## Running on single machine with single/multiple GPU(s)
+
+1. Installation this caffe
+
+2. Interfaces:
+Different interfaces between our caffe and origin's:
+
+```Matlab
+% reset all solvers and nets
+Caffe.reset_all() 
+
+% init a solver and set it handle in my_solver
+my_solver = Caffe.get_solver('solver_proto_path, gpu_id')
+
+% make a snapshot for my_solver
+my_solver.snapshot('snapshot_path_and_name')
+
+% restore a snapshot
+my_solver.use_caffemodel('snapshot_path_and_name')
+
+% set phase. It is useful if you use batch norm layer
+my_solver.set_phase('train/test')
+
+% set input data, format: cellA{cellB{matrix}}
+% data{i}{j} means the j-th input on card i
+my_solver.set_input_data(data)
+
+% forward after set input data, usually used for test
+my_solver.forward_prefilled()
+
+% you can also replace the two above by this:
+my_solver.forward(data)
+
+% train one or more step after you set input data
+my_solver.step(1) or step(N)
+
+% get outputs, usually used for get losses
+my_solver.get_output()
+
+% get specified net handle:
+my_solver.nets{k}
+```
+The other interfaces are same as origin caffe.
+
+## Running on cluster
 
 1.Copy your datas and codes to cluster's shared disk (such as /mnt/lustre)
 
