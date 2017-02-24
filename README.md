@@ -5,7 +5,9 @@ A ___multi-GPU___ & ___memory-reduced___ ___MAT___-Caffe on ___LINUX and WINDOWS
 
 For now it ~~is an unstable version~~ has worked well in plenty of works.
 
-Bug report: liuyuisanai@gmail.com; yangli@ee.cuhk.edu.hk
+Contributors & Bug report: 
+[Yu Liu] liuyuisanai@gmail.com
+[Hongyang Li] yangli@ee.cuhk.edu.hk
 ## What's New in Version 2.3?
 
 1.Reduce 30% GPU memory usage
