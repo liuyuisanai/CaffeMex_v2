@@ -5,7 +5,7 @@ A ___multi-GPU___ & ___memory-reduced___ ___MAT___-Caffe on ___LINUX and WINDOWS
 
 For now it ~~is an unstable version~~ has worked well in plenty of works.
 
-Bug report: liuyu@sensetime.com or liuyuisanai@gmail.com
+Bug report: liuyuisanai@gmail.com; yangli@ee.cuhk.edu.hk
 ## What's New in Version 2.3?
 
 1.Reduce 30% GPU memory usage
@@ -21,7 +21,7 @@ Bug report: liuyu@sensetime.com or liuyuisanai@gmail.com
 2.make -j && make matcaffe
 ## Installation for WINDOWS
 
-1.Find 'windows/' and you will know. Merged by R-FCN https://github.com/daijifeng001/R-FCN
+1.Find 'windows/' and you will know. By merging R-FCN https://github.com/daijifeng001/R-FCN
 ## Feature
 
 1.Support both windows and linux platforms
