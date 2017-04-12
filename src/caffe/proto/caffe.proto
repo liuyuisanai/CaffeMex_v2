@@ -365,6 +365,7 @@ message LayerParameter {
   optional BatchNormParameter batch_norm_param = 139;
   optional BoxAnnotatorOHEMParameter box_annotator_ohem_param = 10000;
   optional BiasParameter bias_param = 141;
+  optional BatchPoolParameter batch_pool_param = 11149;
   optional BNParameter bn_param = 146;
   optional BNHKParameter bnhk_param = 148;
   optional CenterLossParameter center_loss_param = 111213;
@@ -394,6 +395,7 @@ message LayerParameter {
   optional LRNParameter lrn_param = 118;
   optional MemoryDataParameter memory_data_param = 119;
   optional MVNParameter mvn_param = 120;
+  optional NormalizationParameter normalization_param = 111150;
   optional NormalizeParameter normalize_param = 147;
   optional ParameterParameter parameter_param = 145;
   optional PointFocusParameter  point_focus_param = 201;
@@ -1020,7 +1022,23 @@ message MVNParameter {
 message NormalizeParameter {
   optional float coeff = 1 [default = 1.0];
 }
-
+message NormalizationParameter {
+    enum Norm {
+      L1 = 1;
+      L2 = 2;
+    }
+    // Specify the Norm to use L1 or L2
+	//L1 for PQAN
+    optional Norm norm = 1 [default = L2];
+}
+message BatchPoolParameter {
+  enum PoolMethod {
+    MAX = 0;
+    AVE = 1;
+    STOCHASTIC = 2;
+  }
+  optional PoolMethod pool = 1 [default = AVE]; // The pooling method
+}
 message ParameterParameter {
   optional BlobShape shape = 1;
 }
