@@ -1,5 +1,5 @@
-#ifndef CAFFE_POOLING_LAYER_HPP_
-#define CAFFE_POOLING_LAYER_HPP_
+#ifndef CAFFE_UNPOOLING_LAYER_HPP_
+#define CAFFE_UNPOOLING_LAYER_HPP_
 
 #include <vector>
 
@@ -15,16 +15,16 @@ namespace caffe {
  * TODO(dox): thorough documentation for Forward, Backward, and proto params.
  */
 template <typename Dtype>
-class PoolingLayer : public Layer<Dtype> {
+class UnpoolingLayer : public Layer<Dtype> {
  public:
-  explicit PoolingLayer(const LayerParameter& param)
+  explicit UnpoolingLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
-  virtual inline const char* type() const { return "Pooling"; }
+  virtual inline const char* type() const { return "Unpooling"; }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int MinTopBlobs() const { return 1; }
   // MAX POOL layers can output an extra top blob for the mask;
@@ -49,12 +49,9 @@ class PoolingLayer : public Layer<Dtype> {
   int pad_h_, pad_w_;
   int channels_;
   int height_, width_;
-  int pooled_height_, pooled_width_;
-  bool global_pooling_;
-  Blob<Dtype> rand_idx_;
-  Blob<int> max_idx_;
+  int unpooled_height_, unpooled_width_;
 };
 
 }  // namespace caffe
 
-#endif  // CAFFE_POOLING_LAYER_HPP_
+#endif  // CAFFE_UNPOOLING_LAYER_HPP_
