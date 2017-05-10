@@ -8,7 +8,7 @@
 #include "caffe/solver_factory.hpp"
 
 namespace caffe {
-
+	template <typename Dtype> class P2PSync;
 /**
   * @brief Enumeration of actions that a client of the Solver may request by
   * implementing the Solver's action request function, which a
@@ -84,6 +84,10 @@ class Solver {
     template <typename T>
     friend class Solver;
   };
+  const vector<P2PSync<Dtype>*>& p2p() const { return p2p_; }
+  void add_p2p(P2PSync<Dtype>* value) {
+	  p2p_.push_back(value);
+  }
   const vector<Callback*>& callbacks() const { return callbacks_; }
   void add_callback(Callback* value) {
     callbacks_.push_back(value);
@@ -116,6 +120,7 @@ class Solver {
   shared_ptr<Net<Dtype> > net_;
   vector<shared_ptr<Net<Dtype> > > test_nets_;
   vector<Callback*> callbacks_;
+  vector<P2PSync<Dtype>*> p2p_;
   vector<Dtype> losses_;
   Dtype smoothed_loss_;
 

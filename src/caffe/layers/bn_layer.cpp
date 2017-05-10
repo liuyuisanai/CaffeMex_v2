@@ -20,7 +20,10 @@ namespace caffe {
 		var_eps_ = this->layer_param_.bn_param().var_eps();
 		decay_ = this->layer_param_.bn_param().decay();
 		moving_average_ = this->layer_param_.bn_param().moving_average();
-
+		sync_forward_ = this->layer_param_.bn_param().sync_forward();
+		statistics_all_.Reshape(1, channels_, 1, 1);
+		ex_.Reshape(1, channels_, 1, 1);
+		dx_.Reshape(1, channels_, 1, 1);
 		// Check if we need to set up the weights
 		if ( this->blobs_.size() > 0 ) {
 			LOG(INFO) << "Skipping parameter initialization";
@@ -69,6 +72,9 @@ namespace caffe {
 		// statistic
 		spatial_statistic_.Reshape(num_, channels_, 1, 1);
 		batch_statistic_.Reshape(1, channels_, 1, 1);
+		statistics_all_.Reshape(1, channels_, 1, 1);
+		ex_.Reshape(1, channels_, 1, 1);
+		dx_.Reshape(1, channels_, 1, 1);
 
 		// buffer blob
 		buffer_blob_.Reshape(num_, channels_, height_, width_);
@@ -102,6 +108,27 @@ namespace caffe {
 			batch_sum_multiplier_.cpu_data(), Dtype(0), batch_statistic_.mutable_cpu_data());
 		// save history mean
 		if ( this->phase_ == TRAIN ) {
+			// sync statistics
+			if ( sync_forward_ ){
+				caffe_copy(channels_, batch_statistic_.cpu_data(), statistics_all_.mutable_cpu_data());
+				P2PSync<Dtype>* p2p = this->callbacks()[ 0 ]->callbacks()[ 0 ]->p2p()[ 0 ];
+				for ( int i = 0; i < p2p->children().size(); ++i ){
+					Blob<Dtype>* statistics_child = p2p->dataQueue().pop();
+					caffe_add(channels_, statistics_child->cpu_data(), statistics_all_.cpu_data(), statistics_all_.mutable_cpu_data());
+				}
+				if ( p2p->parent() ){
+					p2p->parent()->dataQueue().push(&statistics_all_);
+					Blob<Dtype>* statistics_final = p2p->dataQueue().pop();
+					caffe_copy(channels_, statistics_final->cpu_data(), batch_statistic_.mutable_cpu_data());
+				}
+				else {
+					caffe_scal<Dtype>(channels_, Dtype(1.0 / Caffe::solver_count()), statistics_all_.mutable_cpu_data());
+					caffe_copy(channels_, statistics_all_.cpu_data(), batch_statistic_.mutable_cpu_data());
+				}
+				for ( int i = 0; i < p2p->children().size(); ++i ){
+					p2p->children()[ i ]->dataQueue().push(&batch_statistic_);
+				}
+			}
 			caffe_cpu_axpby(batch_statistic_.count(), Dtype(1) - decay_, batch_statistic_.cpu_data(), decay_,
 				this->blobs_[ 2 ]->mutable_cpu_data());
 		}
@@ -109,6 +136,7 @@ namespace caffe {
 			// use moving average mean
 			caffe_copy(batch_statistic_.count(), this->blobs_[ 2 ]->cpu_data(), batch_statistic_.mutable_cpu_data());
 		}
+		
 		// put mean blob into buffer_blob_
 		caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_, channels_, 1, Dtype(1),
 			batch_sum_multiplier_.cpu_data(), batch_statistic_.cpu_data(), Dtype(0),

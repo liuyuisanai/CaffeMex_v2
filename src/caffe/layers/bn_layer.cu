@@ -23,19 +23,46 @@ namespace caffe {
                             spatial_sum_multiplier_.gpu_data(), Dtype(0), spatial_statistic_.mutable_gpu_data());
       // statistic across batch
       caffe_gpu_gemv<Dtype>(CblasTrans, num_, channels_, Dtype(1. / num_), spatial_statistic_.gpu_data(),
-                            batch_sum_multiplier_.gpu_data(), Dtype(0), batch_statistic_.mutable_gpu_data());
+		  batch_sum_multiplier_.gpu_data(), Dtype(0), ex_.mutable_gpu_data());
 		if (this->phase_ == TRAIN) {
-      // save history mean
-		  caffe_gpu_axpby(batch_statistic_.count(), Dtype(1) - decay_, batch_statistic_.gpu_data(), decay_,
+			// sync statistics
+			if ( sync_forward_ ){
+				// first, sync EX
+				caffe_copy(channels_, ex_.gpu_data(), statistics_all_.mutable_gpu_data());
+				P2PSync<Dtype>* p2p = this->callbacks()[ 0 ]->callbacks()[ 0 ]->p2p()[ 0 ];
+				Blob<Dtype> statistics_child(1, channels_, 1, 1);
+				for ( int i = 0; i < p2p->children().size(); ++i ){
+					Blob<Dtype>* s_c_ogpu = p2p->dataQueue().pop();
+					CUDA_CHECK(cudaMemcpyAsync(statistics_child.mutable_gpu_data(), s_c_ogpu->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
+					CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
+					caffe_gpu_add(channels_, statistics_child.gpu_data(), statistics_all_.gpu_data(), statistics_all_.mutable_gpu_data());
+				}
+				if ( p2p->parent() ){
+					p2p->parent()->dataQueue().push(&statistics_all_);
+					Blob<Dtype>* statistics_final = p2p->dataQueue().pop();
+					CUDA_CHECK(cudaMemcpyAsync(ex_.mutable_gpu_data(), statistics_final->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
+					CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
+				}
+				else {
+					caffe_gpu_scal<Dtype>(channels_, Dtype(1.0 / Caffe::solver_count()), statistics_all_.mutable_gpu_data());
+					caffe_copy(channels_, statistics_all_.gpu_data(), ex_.mutable_gpu_data());
+				}
+				for ( int i = 0; i < p2p->children().size(); ++i ){
+					p2p->children()[ i ]->dataQueue().push(&ex_);
+				}
+			}
+			// save history mean
+			caffe_gpu_axpby(ex_.count(), Dtype(1) - decay_, ex_.gpu_data(), decay_,
 			    this->blobs_[2]->mutable_gpu_data());
 		}
 		if (this->phase_ == TEST && moving_average_) {
 			// use moving average mean
-			caffe_copy(batch_statistic_.count(), this->blobs_[2]->gpu_data(), batch_statistic_.mutable_gpu_data());
+			caffe_copy(ex_.count(), this->blobs_[ 2 ]->gpu_data(), ex_.mutable_gpu_data());
 		}
+		
 		// put mean blob into buffer_blob_
 		caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_, channels_, 1, Dtype(1),
-			batch_sum_multiplier_.gpu_data(), batch_statistic_.gpu_data(), Dtype(0),
+			batch_sum_multiplier_.gpu_data(), ex_.gpu_data(), Dtype(0),
 			spatial_statistic_.mutable_gpu_data());
 		caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_ * channels_, height_ * width_, 1, Dtype(-1),
 			spatial_statistic_.gpu_data(), spatial_sum_multiplier_.gpu_data(), Dtype(0),
@@ -44,28 +71,73 @@ namespace caffe {
 		caffe_gpu_add(buffer_blob_.count(), const_bottom_data, buffer_blob_.gpu_data(), top_data);
 
 		// ---------- variance normalization ---------- //
-      // put the squares of X - mean into buffer_blob_
-      caffe_gpu_powx(buffer_blob_.count(), const_top_data, Dtype(2), buffer_blob_.mutable_gpu_data());
-      // statistic across spatial
-      caffe_gpu_gemv<Dtype>(CblasNoTrans, num_ * channels_, height_ * width_, Dtype(1. / (height_ * width_)), buffer_blob_.gpu_data(),
-                            spatial_sum_multiplier_.gpu_data(), Dtype(0), spatial_statistic_.mutable_gpu_data());
-      // statistic across batch
-      caffe_gpu_gemv<Dtype>(CblasTrans, num_, channels_, Dtype(1. / num_), spatial_statistic_.gpu_data(),
-                            batch_sum_multiplier_.gpu_data(), Dtype(0), batch_statistic_.mutable_gpu_data());
+		// add by yu liu
+		// calculate EX2
+		caffe_gpu_powx(bottom[ 0 ]->count(), const_bottom_data, Dtype(2), buffer_blob_.mutable_gpu_data());
+		// statistic across spatial
+		caffe_gpu_gemv<Dtype>(CblasNoTrans, num_ * channels_, height_ * width_, Dtype(1. / ( height_ * width_ )), buffer_blob_.gpu_data(),
+			spatial_sum_multiplier_.gpu_data(), Dtype(0), spatial_statistic_.mutable_gpu_data());
+		// statistic across batch
+		caffe_gpu_gemv<Dtype>(CblasTrans, num_, channels_, Dtype(1. / num_), spatial_statistic_.gpu_data(),
+			batch_sum_multiplier_.gpu_data(), Dtype(0), batch_statistic_.mutable_gpu_data());
+		if ( sync_forward_ ){
+			// second, sync EX2
+			caffe_copy(channels_, batch_statistic_.gpu_data(), statistics_all_.mutable_gpu_data());
+			P2PSync<Dtype>* p2p = this->callbacks()[ 0 ]->callbacks()[ 0 ]->p2p()[ 0 ];
+			Blob<Dtype> statistics_child(1, channels_, 1, 1);
+			for ( int i = 0; i < p2p->children().size(); ++i ){
+				Blob<Dtype>* s_c_ogpu = p2p->dataQueue().pop();
+				CUDA_CHECK(cudaMemcpyAsync(statistics_child.mutable_gpu_data(), s_c_ogpu->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
+				CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
+				caffe_gpu_add(channels_, statistics_child.gpu_data(), statistics_all_.gpu_data(), statistics_all_.mutable_gpu_data());
+			}
+			if ( p2p->parent() ){
+				p2p->parent()->dataQueue().push(&statistics_all_);
+				Blob<Dtype>* statistics_final = p2p->dataQueue().pop();
+				CUDA_CHECK(cudaMemcpyAsync(dx_.mutable_gpu_data(), statistics_final->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
+				CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
+			}
+			else {
+				caffe_gpu_scal<Dtype>(channels_, Dtype(1.0 / Caffe::solver_count()), statistics_all_.mutable_gpu_data());
+				Blob<Dtype> e2x_(1, channels_, 1, 1);
+				caffe_gpu_powx(ex_.count(), ex_.gpu_data(), Dtype(2), e2x_.mutable_gpu_data());
+				caffe_gpu_sub<Dtype>(ex_.count(), statistics_all_.gpu_data(), e2x_.gpu_data(), dx_.mutable_gpu_data());
+			}
+			for ( int i = 0; i < p2p->children().size(); ++i ){
+				p2p->children()[ i ]->dataQueue().push(&dx_);
+			}
+		}
+		else{
+			Blob<Dtype> e2x_(1, channels_, 1, 1);
+			caffe_gpu_powx(ex_.count(), ex_.gpu_data(), Dtype(2), e2x_.mutable_gpu_data());
+			caffe_gpu_sub<Dtype>(ex_.count(), batch_statistic_.gpu_data(), e2x_.gpu_data(), dx_.mutable_gpu_data());
+		}
+
+
+
+		// original dx
+      //// put the squares of X - mean into buffer_blob_
+      //caffe_gpu_powx(buffer_blob_.count(), const_top_data, Dtype(2), buffer_blob_.mutable_gpu_data());
+      //// statistic across spatial
+      //caffe_gpu_gemv<Dtype>(CblasNoTrans, num_ * channels_, height_ * width_, Dtype(1. / (height_ * width_)), buffer_blob_.gpu_data(),
+      //                      spatial_sum_multiplier_.gpu_data(), Dtype(0), spatial_statistic_.mutable_gpu_data());
+      //// statistic across batch
+      //caffe_gpu_gemv<Dtype>(CblasTrans, num_, channels_, Dtype(1. / num_), spatial_statistic_.gpu_data(),
+      //                      batch_sum_multiplier_.gpu_data(), Dtype(0), batch_statistic_.mutable_gpu_data());
     if (this->phase_ == TRAIN) {
       // save history variance
-      caffe_gpu_axpby(batch_statistic_.count(), Dtype(1) - decay_, batch_statistic_.gpu_data(), decay_,
+		caffe_gpu_axpby(dx_.count(), Dtype(1) - decay_, dx_.gpu_data(), decay_,
                       this->blobs_[3]->mutable_gpu_data());
     }
-		if (this->phase_ == TEST && moving_average_) {
-			// use moving average variance
-			caffe_copy(batch_statistic_.count(), this->blobs_[3]->gpu_data(), batch_statistic_.mutable_gpu_data());
-		}
+	if (this->phase_ == TEST && moving_average_) {
+		// use moving average variance
+		caffe_copy(dx_.count(), this->blobs_[ 3 ]->gpu_data(), dx_.mutable_gpu_data());
+	}
     
     // add eps
-    caffe_gpu_add_scalar(batch_statistic_.count(), var_eps_, batch_statistic_.mutable_gpu_data());
+	caffe_gpu_add_scalar(dx_.count(), var_eps_, dx_.mutable_gpu_data());
 		// std
-		caffe_gpu_powx(batch_statistic_.count(), batch_statistic_.gpu_data(), Dtype(0.5),
+	caffe_gpu_powx(dx_.count(), dx_.gpu_data(), Dtype(0.5),
 			batch_statistic_.mutable_gpu_data());
 		// put std blob into buffer_blob_
 		caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_, channels_, 1, Dtype(1),

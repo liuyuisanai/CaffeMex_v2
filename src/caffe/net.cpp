@@ -290,6 +290,11 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
 	  excluded_blob_names_.insert(param.mem_param().exclude_blob(ex_id));
   }
 
+
+  for ( int i = 0; i < layers_.size(); ++i ){
+	  layers_[ i ]->add_callback(this);
+  }
+
   // launch memory optimization if necessary
   if ( !debug_info_ && need_optimze_mem ) {
 	  MemoryOptimize();

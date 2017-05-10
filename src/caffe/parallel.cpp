@@ -222,6 +222,7 @@ P2PSync<Dtype>::P2PSync(shared_ptr<Solver<Dtype> > root_solver,
   }
   this->configure(solver_.get());
   solver_->add_callback(this);
+  solver_->add_p2p(this);
 
   if (parent) {
     // Enable p2p access between devices

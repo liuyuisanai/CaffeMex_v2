@@ -11,6 +11,7 @@
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/math_functions.hpp"
 
+
 /**
  Forward declare boost::thread instead of including boost/thread.hpp
  to avoid a boost/NVCC issues (#1009, #1010) on OSX.
@@ -19,6 +20,7 @@ namespace boost { class mutex; }
 
 namespace caffe {
 
+	template <typename Dtype> class Net;
 /**
  * @brief An interface for the units of computation which can be composed into a
  *        Net.
@@ -50,6 +52,12 @@ class Layer {
       }
     }
   virtual ~Layer() {}
+  void add_callback(Net<Dtype>* value) {
+	  callbacks_.push_back(value);
+  }
+  inline const vector<Net<Dtype>*>& callbacks() const{
+	  return callbacks_;
+  }
 
   /**
    * @brief Implements common layer setup functionality.
@@ -329,6 +337,7 @@ class Layer {
  protected:
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;
+  vector<Net<Dtype>*> callbacks_;
   /** The phase: TRAIN or TEST */
   Phase phase_;
   /** The vector that stores the learnable parameters as a set of blobs. */

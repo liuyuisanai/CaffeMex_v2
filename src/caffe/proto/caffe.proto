@@ -655,6 +655,7 @@ message BNParameter {
 	optional float var_eps = 3 [default = 1e-10]; // The epsilon added to variance
 	optional bool moving_average = 4 [default = true]; // whether or not using moving average for inference
 	optional float decay = 5 [default = 0.95]; // The decay factor for moving average
+  optional bool sync_forward = 6 [default = false]; // The flag for statistic (mean/var) sync at forward proceeding
 }
 
 message ContrastiveLossParameter {

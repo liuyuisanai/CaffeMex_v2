@@ -20,6 +20,9 @@ namespace caffe {
  *
  * TODO(dox): more thorough description.
  */
+
+	template <typename Dtype> class Solver;
+
 template <typename Dtype>
 class Net {
  public:
@@ -27,6 +30,12 @@ class Net {
   explicit Net(const string& param_file, Phase phase,
       const Net* root_net = NULL);
   virtual ~Net() {}
+  void add_callback(Solver<Dtype>* value) {
+	  callbacks_.push_back(value);
+  }
+  inline const vector<Solver<Dtype>*>& callbacks() const{
+	  return callbacks_;
+  }
 
   /// @brief Initialize a network with a NetParameter.
   void Init(const NetParameter& param);
@@ -303,6 +312,7 @@ class Net {
   /// The parameters in the network.
   vector<shared_ptr<Blob<Dtype> > > params_;
   vector<Blob<Dtype>*> learnable_params_;
+  vector<Solver<Dtype>*> callbacks_;
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),

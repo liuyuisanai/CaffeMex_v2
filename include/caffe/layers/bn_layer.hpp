@@ -6,6 +6,7 @@
 #include "caffe/blob.hpp"
 #include "caffe/layer.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/parallel.hpp"
 
 namespace caffe {
 
@@ -46,7 +47,7 @@ namespace caffe {
 		// May use for-loop instead
 
 		// x_sum_multiplier is used to carry out sum using BLAS
-		Blob<Dtype> spatial_sum_multiplier_, batch_sum_multiplier_;
+		Blob<Dtype> spatial_sum_multiplier_, batch_sum_multiplier_, ex_, dx_;
 
 		// dimension
 		int num_;
@@ -59,7 +60,9 @@ namespace caffe {
 		Dtype decay_;
 		// whether or not using moving average for inference
 		bool moving_average_;
-
+		// whether sync statistics when forward
+		bool sync_forward_;
+		Blob<Dtype> statistics_all_;
 	};
 }
 
