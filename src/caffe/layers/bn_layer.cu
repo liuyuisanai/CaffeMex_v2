@@ -32,14 +32,28 @@ namespace caffe {
 				P2PSync<Dtype>* p2p = this->callbacks()[ 0 ]->callbacks()[ 0 ]->p2p()[ 0 ];
 				Blob<Dtype> statistics_child(1, channels_, 1, 1);
 				for ( int i = 0; i < p2p->children().size(); ++i ){
+#ifdef _WIN64
 					Blob<Dtype>* s_c_ogpu = p2p->dataQueue().pop();
+#else
+					Blob<Dtype>* s_c_ogpu = NULL;
+					while ( !p2p->dataQueue().try_pop(&s_c_ogpu) )
+						;
+#endif
+					//Blob<Dtype>* s_c_ogpu = p2p->dataQueue().pop();
 					CUDA_CHECK(cudaMemcpyAsync(statistics_child.mutable_gpu_data(), s_c_ogpu->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
 					CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
 					caffe_gpu_add(channels_, statistics_child.gpu_data(), statistics_all_.gpu_data(), statistics_all_.mutable_gpu_data());
 				}
 				if ( p2p->parent() ){
 					p2p->parent()->dataQueue().push(&statistics_all_);
+#ifdef _WIN64
 					Blob<Dtype>* statistics_final = p2p->dataQueue().pop();
+#else
+					Blob<Dtype>* statistics_final = NULL;
+					while ( !p2p->dataQueue().try_pop(&statistics_final) )
+						;
+#endif
+					//Blob<Dtype>* statistics_final = p2p->dataQueue().pop();
 					CUDA_CHECK(cudaMemcpyAsync(ex_.mutable_gpu_data(), statistics_final->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
 					CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
 				}
@@ -86,14 +100,28 @@ namespace caffe {
 			P2PSync<Dtype>* p2p = this->callbacks()[ 0 ]->callbacks()[ 0 ]->p2p()[ 0 ];
 			Blob<Dtype> statistics_child(1, channels_, 1, 1);
 			for ( int i = 0; i < p2p->children().size(); ++i ){
+#ifdef _WIN64
 				Blob<Dtype>* s_c_ogpu = p2p->dataQueue().pop();
+#else // Linux support
+				Blob<Dtype>* s_c_ogpu = NULL;
+				while ( !p2p->dataQueue().try_pop(&s_c_ogpu) )
+					;
+#endif
+				//Blob<Dtype>* s_c_ogpu = p2p->dataQueue().pop();
 				CUDA_CHECK(cudaMemcpyAsync(statistics_child.mutable_gpu_data(), s_c_ogpu->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
 				CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
 				caffe_gpu_add(channels_, statistics_child.gpu_data(), statistics_all_.gpu_data(), statistics_all_.mutable_gpu_data());
 			}
 			if ( p2p->parent() ){
 				p2p->parent()->dataQueue().push(&statistics_all_);
+#ifdef _WIN64
 				Blob<Dtype>* statistics_final = p2p->dataQueue().pop();
+#else // Linux support
+				Blob<Dtype>* statistics_final = NULL;
+				while ( !p2p->dataQueue().try_pop(&statistics_final) )
+					;
+#endif
+				//Blob<Dtype>* statistics_final = p2p->dataQueue().pop();
 				CUDA_CHECK(cudaMemcpyAsync(dx_.mutable_gpu_data(), statistics_final->gpu_data(), channels_*sizeof( Dtype ), cudaMemcpyDeviceToDevice, cudaStreamDefault));
 				CUDA_CHECK(cudaStreamSynchronize(cudaStreamDefault));
 			}
