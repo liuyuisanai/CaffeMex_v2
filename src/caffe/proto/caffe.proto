@@ -1026,7 +1026,7 @@ message MemoryOptimizationParameter {
   // Mode of optimization
 
   // whether to optimize for all nets specified in train phase
-  optional bool optimize_train = 1 [default = true];
+  optional bool optimize_train = 1 [default = false];
 
   // whether to optimize for all nets specified in test phase
   optional bool optimize_test = 2 [default = false];
