@@ -12,7 +12,7 @@ namespace caffe {
 
 
 	template <typename Dtype>
-	__global__ void NormalizeForward(const int n, const Dtype* in, Dtype* out, int length){
+	__global__ void NormalizeForward(const int n, const Dtype* in, Dtype* out, int length, Dtype rescale_coeff_){
 		CUDA_KERNEL_LOOP(index, n) {
 			Dtype sum = 0;
 			for ( int i = 0; i < length; i++ )
@@ -22,12 +22,12 @@ namespace caffe {
 			sum = sqrt(sum + 0.000000001);
 			for ( int i = 0; i < length; i++ )
 			{
-				out[ index*length + i ] = in[ index*length + i ] / sum;
+				out[index*length + i] = in[index*length + i] / sum * rescale_coeff_;
 			}
 		}
 	}
 	template <typename Dtype>
-	__global__ void NormalizeBackward(const int n, const Dtype* x, const Dtype* y, const Dtype* dy, Dtype* dx, int length){
+	__global__ void NormalizeBackward(const int n, const Dtype* x, const Dtype* y, const Dtype* dy, Dtype* dx, int length, Dtype rescale_coeff_){
 		CUDA_KERNEL_LOOP(index, n) {
 			Dtype sum = 0;
 			Dtype ip = 0;
@@ -41,7 +41,7 @@ namespace caffe {
 			for ( int i = 0; i < length; i++ )
 			{
 				int ind = index * length + i;
-				dx[ ind ] = ( dy[ ind ] - ip*y[ ind ] ) / sum;
+				dx[ind] = (dy[ind] - ip*y[ind]) / sum * rescale_coeff_;
 			}
 		}
 	}
@@ -64,7 +64,7 @@ namespace caffe {
 		caffe_gpu_scale<Dtype>(d, rescale_coeff_, top_data+i*d, top_data+i*d);
 		DLOG(INFO) << "3. scale";
 		}*/
-		NormalizeForward<Dtype> << <CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS >> >( n, bottom_data, top_data, d );
+		NormalizeForward<Dtype> << <CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS >> >(n, bottom_data, top_data, d, rescale_coeff_);
 		CUDA_POST_KERNEL_CHECK;
 	}
 
@@ -90,7 +90,7 @@ namespace caffe {
 		//	//caffe_gpu_scale<Dtype>(d, rescale_coeff_, bottom_diff+i*d, bottom_diff+i*d);
 		//	DLOG(INFO) << "Backward end";
 		//}
-		NormalizeBackward<Dtype> << <CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS >> >( n, bottom_data, top_data, top_diff, bottom_diff, d );
+		NormalizeBackward<Dtype> << <CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS >> >(n, bottom_data, top_data, top_diff, bottom_diff, d, rescale_coeff_);
 	}
 
 	INSTANTIATE_LAYER_GPU_FUNCS(NormalizeLayer);

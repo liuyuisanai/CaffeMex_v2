@@ -14,7 +14,7 @@ namespace caffe {
 			{
 				sum = sum + in[ index*length + i ] * in[ index*length + i ];
 			}
-			sum = sqrt(sum + 0.000000001);
+			sum = sqrt(sum)+FLT_EPSILON;
 			for ( int i = 0; i < length; i++ )
 			{
 				out[ index*length + i ] = in[ index*length + i ] / sum;
@@ -39,7 +39,7 @@ namespace caffe {
 		}
 		else {
 			// Step 1: Normalize weight
-			L2Normalize<Dtype> << <CAFFE_GET_BLOCKS(N_), CAFFE_CUDA_NUM_THREADS >> >( N_, weight, weight_writable, K_ );
+			L2Normalize<Dtype> << <CAFFE_GET_BLOCKS(N_), CAFFE_CUDA_NUM_THREADS >> >(N_, weight, weight_writable, K_);
 			CUDA_POST_KERNEL_CHECK;
 			/*Dtype* squared_data = squared_.mutable_gpu_data();
 			caffe_gpu_powx(N_*K_, weight, Dtype(2), squared_data);
@@ -52,7 +52,7 @@ namespace caffe {
 			// Step 2: Get projection
 			caffe_gpu_gemm<Dtype>(CblasNoTrans,
 				transpose_ ? CblasNoTrans : CblasTrans,
-				M_, N_, K_, ( Dtype )1.,
+				M_, N_, K_, rescale_coeff_,
 				bottom_data, weight, ( Dtype )0., top_data);
 			if ( bias_term_ )
 				caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, 1, ( Dtype )1.,
@@ -72,13 +72,13 @@ namespace caffe {
 			if ( transpose_ ) {
 				caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
 					K_, N_, M_,
-					( Dtype )1., bottom_data, top_diff,
+					rescale_coeff_, bottom_data, top_diff,
 					( Dtype )1., this->blobs_[ 0 ]->mutable_gpu_diff());
 			}
 			else {
 				caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
 					N_, K_, M_,
-					( Dtype )1., top_diff, bottom_data,
+					rescale_coeff_, top_diff, bottom_data,
 					( Dtype )1., this->blobs_[ 0 ]->mutable_gpu_diff());
 			}
 		}
@@ -95,13 +95,13 @@ namespace caffe {
 			if ( transpose_ ) {
 				caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasTrans,
 					M_, K_, N_,
-					( Dtype )1., top_diff, this->blobs_[ 0 ]->gpu_data(),
+					rescale_coeff_, top_diff, this->blobs_[0]->gpu_data(),
 					( Dtype )0., bottom[ 0 ]->mutable_gpu_diff());
 			}
 			else {
 				caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans,
 					M_, K_, N_,
-					( Dtype )1., top_diff, this->blobs_[ 0 ]->gpu_data(),
+					rescale_coeff_, top_diff, this->blobs_[0]->gpu_data(),
 					( Dtype )0., bottom[ 0 ]->mutable_gpu_diff());
 			}
 		}

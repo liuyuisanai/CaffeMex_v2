@@ -94,6 +94,18 @@ namespace caffe {
 		// statistic across batch
 		caffe_gpu_gemv<Dtype>(CblasTrans, num_, channels_, Dtype(1. / num_), spatial_statistic_.gpu_data(),
 			batch_sum_multiplier_.gpu_data(), Dtype(0), batch_statistic_.mutable_gpu_data());
+		
+
+		// original dx
+      //// put the squares of X - mean into buffer_blob_
+      //caffe_gpu_powx(buffer_blob_.count(), const_top_data, Dtype(2), buffer_blob_.mutable_gpu_data());
+      //// statistic across spatial
+      //caffe_gpu_gemv<Dtype>(CblasNoTrans, num_ * channels_, height_ * width_, Dtype(1. / (height_ * width_)), buffer_blob_.gpu_data(),
+      //                      spatial_sum_multiplier_.gpu_data(), Dtype(0), spatial_statistic_.mutable_gpu_data());
+      //// statistic across batch
+      //caffe_gpu_gemv<Dtype>(CblasTrans, num_, channels_, Dtype(1. / num_), spatial_statistic_.gpu_data(),
+      //                      batch_sum_multiplier_.gpu_data(), Dtype(0), batch_statistic_.mutable_gpu_data());
+    if (this->phase_ == TRAIN) {
 		if ( sync_forward_ ){
 			// second, sync EX2
 			caffe_copy(channels_, batch_statistic_.gpu_data(), statistics_all_.mutable_gpu_data());
@@ -142,26 +154,23 @@ namespace caffe {
 		}
 
 
-
-		// original dx
-      //// put the squares of X - mean into buffer_blob_
-      //caffe_gpu_powx(buffer_blob_.count(), const_top_data, Dtype(2), buffer_blob_.mutable_gpu_data());
-      //// statistic across spatial
-      //caffe_gpu_gemv<Dtype>(CblasNoTrans, num_ * channels_, height_ * width_, Dtype(1. / (height_ * width_)), buffer_blob_.gpu_data(),
-      //                      spatial_sum_multiplier_.gpu_data(), Dtype(0), spatial_statistic_.mutable_gpu_data());
-      //// statistic across batch
-      //caffe_gpu_gemv<Dtype>(CblasTrans, num_, channels_, Dtype(1. / num_), spatial_statistic_.gpu_data(),
-      //                      batch_sum_multiplier_.gpu_data(), Dtype(0), batch_statistic_.mutable_gpu_data());
-    if (this->phase_ == TRAIN) {
       // save history variance
 		caffe_gpu_axpby(dx_.count(), Dtype(1) - decay_, dx_.gpu_data(), decay_,
                       this->blobs_[3]->mutable_gpu_data());
     }
-	if (this->phase_ == TEST && moving_average_) {
+	if (this->phase_ == TEST ) {
 		// use moving average variance
-		caffe_copy(dx_.count(), this->blobs_[ 3 ]->gpu_data(), dx_.mutable_gpu_data());
+		if ( moving_average_ )
+			caffe_copy(dx_.count(), this->blobs_[ 3 ]->gpu_data(), dx_.mutable_gpu_data());
+		else{
+			Blob<Dtype> e2x_(1, channels_, 1, 1);
+			caffe_gpu_powx(ex_.count(), ex_.gpu_data(), Dtype(2), e2x_.mutable_gpu_data());
+			caffe_gpu_sub<Dtype>(ex_.count(), batch_statistic_.gpu_data(), e2x_.gpu_data(), dx_.mutable_gpu_data());
+		}
 	}
     
+	// Until now, dx_ should be calculated
+
     // add eps
 	caffe_gpu_add_scalar(dx_.count(), var_eps_, dx_.mutable_gpu_data());
 		// std
