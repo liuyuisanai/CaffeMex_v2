@@ -14,7 +14,7 @@ namespace caffe {
 			{
 				sum = sum + in[ index*length + i ] * in[ index*length + i ];
 			}
-			sum = sqrt(sum)+FLT_EPSILON;
+			sum = sqrt(sum)+1e-6;
 			for ( int i = 0; i < length; i++ )
 			{
 				out[ index*length + i ] = in[ index*length + i ] / sum;
