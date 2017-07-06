@@ -15,7 +15,7 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Backward_gpu(
   }
   if (propagate_down[0]) {
     // First, compute the diff
-	  if ( bottom[ 0 ]->count() < 1 ){
+	  if ( bottom[ 0 ]->count() < 1 || valid_num_ < 1 ){
 		  return;
 	  }
     const int count = bottom[0]->count();
