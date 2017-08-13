@@ -42,6 +42,10 @@
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA $(CudaVersion).props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -144,6 +148,7 @@
     <ClCompile Include="..\..\src\caffe\layers\exp_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\filter_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\flatten_layer.cpp" />
+    <ClCompile Include="..\..\src\caffe\layers\focal_loss_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\gate_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\gaussian_noise_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\gaussian_sample_layer.cpp" />
@@ -270,6 +275,7 @@
     <ClInclude Include="..\..\include\caffe\layers\exp_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\filter_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\flatten_layer.hpp" />
+    <ClInclude Include="..\..\include\caffe\layers\focal_loss_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\gate_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\gaussian_noise_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\gaussian_sample_layer.hpp" />
@@ -415,6 +421,7 @@
     <CudaCompile Include="..\..\src\caffe\layers\center_projection_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\conv_data_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\divergence_loss_layer.cu" />
+    <CudaCompile Include="..\..\src\caffe\layers\focal_loss_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\gate_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\gaussian_noise_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\gaussian_sample_layer.cu" />

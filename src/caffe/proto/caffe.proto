@@ -427,7 +427,15 @@ message LayerParameter {
   optional ClsOHEMParameter cls_ohem_param = 10947;
   optional UnpoolingParameter unpooling_param = 12155;
   optional MarginInnerProductParameter margin_inner_product_param = 161;
+  optional FocalLossParameter focal_loss_param = 10632;
 }
+
+
+message FocalLossParameter {
+  optional float alpha = 1 [default = 0.25]; // The scale
+  optional float gamma = 2 [default = 2]; // The exponent
+}
+
 
 message MarginInnerProductParameter {
   optional uint32 num_output = 1; // The number of outputs for the layer

@@ -6,7 +6,7 @@
         <!--NOTE: CpuOnlyBuild and UseCuDNN flags can't be set at the same time.-->
         <CpuOnlyBuild>false</CpuOnlyBuild>
         <UseCuDNN>true</UseCuDNN>
-        <CudaVersion>7.5</CudaVersion>
+        <CudaVersion>8.0</CudaVersion>
         <!-- NOTE: If Python support is enabled, PythonDir (below) needs to be
          set to the root of your Python installation. If your Python installation
          does not contain debug libraries, debug build will not work. -->
@@ -18,9 +18,9 @@
 
         <!-- Set CUDA architecture suitable for your GPU.
          Setting proper architecture is important to mimize your run and compile time. -->
-        <CudaArchitecture>compute_52,sm_52</CudaArchitecture>
+        <CudaArchitecture>compute_61,sm_61</CudaArchitecture>
 
-        <!-- CuDNN 3 and 4 are supported -->
+        <!-- CuDNN 4 and 5 are supported -->
         <CuDnnPath>c:/cudnnv5</CuDnnPath>
         <ScriptsDir>$(SolutionDir)\scripts</ScriptsDir>
     </PropertyGroup>
