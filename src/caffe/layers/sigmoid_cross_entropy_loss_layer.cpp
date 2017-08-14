@@ -60,7 +60,6 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
 			  log(1 + exp(input_data[ i ] - 2 * input_data[ i ] * ( input_data[ i ] >= 0 )));
 	  }
   }
-  LOG(INFO) << "Sigmoid cross entropy loss valid num: " << valid_num_ << endl;
   if ( valid_num_ < 1 )
 	  top[ 0 ]->mutable_cpu_data()[ 0 ] = 0;
   else
