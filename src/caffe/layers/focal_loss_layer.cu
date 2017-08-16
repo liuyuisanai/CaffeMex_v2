@@ -33,7 +33,7 @@ __global__ void FocalLossBackwardSecondItemGPU(const int nthreads,
 	CUDA_KERNEL_LOOP(i, nthreads) {
 		const int target_value = static_cast<int>( target[ i ] );
 		Dtype expabsx = expf(input_data[ i ] > 0 ? -input_data[ i ] : input_data[ i ]);
-		secondItem[ i ] = alpha*gamma*
+		secondItem[ i ] = (target_value == 1 ? alpha : 1 - alpha) * gamma *
 			powf(1 - ( target_value == 1 ? sigmoid_data[ i ] : ( 1 - sigmoid_data[ i ] ) ), gamma - 1) *
 			expabsx / ( powf(expabsx, 2) + 2 * expabsx + 1 ) *
 			( target_value == 1 ? -1 : 1 );
