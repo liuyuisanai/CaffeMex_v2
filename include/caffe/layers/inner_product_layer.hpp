@@ -26,7 +26,7 @@ class InnerProductLayer : public Layer<Dtype> {
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "InnerProduct"; }
-  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int MaxBottomBlobs() const { return 2; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
@@ -45,6 +45,8 @@ class InnerProductLayer : public Layer<Dtype> {
   bool bias_term_;
   Blob<Dtype> bias_multiplier_;
   bool transpose_;  ///< if true, assume transposed weights
+  bool update_;
+  int update_val_;
 };
 
 }  // namespace caffe

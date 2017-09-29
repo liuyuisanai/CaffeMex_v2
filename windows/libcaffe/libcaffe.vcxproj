@@ -3,7 +3,6 @@
   <Import Project="..\..\..\NugetPackages\glog.0.3.3.0\build\native\glog.props" Condition="Exists('..\..\..\NugetPackages\glog.0.3.3.0\build\native\glog.props')" />
   <Import Project="..\..\..\NugetPackages\gflags.2.1.2.1\build\native\gflags.props" Condition="Exists('..\..\..\NugetPackages\gflags.2.1.2.1\build\native\gflags.props')" />
   <Import Project="..\..\..\NugetPackages\protoc_x64.2.6.1\build\native\protoc_x64.props" Condition="Exists('..\..\..\NugetPackages\protoc_x64.2.6.1\build\native\protoc_x64.props')" />
-  <Import Project="..\..\..\NugetPackages\OpenCV.2.4.10\build\native\OpenCV.props" Condition="Exists('..\..\..\NugetPackages\OpenCV.2.4.10\build\native\OpenCV.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -109,6 +108,7 @@
     <ClCompile Include="..\..\src\caffe\layers\absval_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\accuracy_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\argmax_layer.cpp" />
+    <ClCompile Include="..\..\src\caffe\layers\balanceable_sigmoid_cross_entropy_loss_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\base_conv_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\base_data_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\batch_norm_layer.cpp" />
@@ -238,6 +238,7 @@
     <ClInclude Include="..\..\include\caffe\layers\absval_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\accuracy_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\argmax_layer.hpp" />
+    <ClInclude Include="..\..\include\caffe\layers\balanceable_sigmoid_cross_entropy_loss_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\base_conv_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\base_data_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\batch_norm_layer.hpp" />
@@ -413,6 +414,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="..\..\src\caffe\layers\balanceable_sigmoid_cross_entropy_loss_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\bnhk_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\bn_data_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\bn_layer.cu" />
@@ -441,7 +443,6 @@
   <Import Project="$(SolutionDir)\CommonSettings.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Condition="'$(CpuOnlyBuild)'=='false'" Project="$(VCTargetsPath)\BuildCustomizations\CUDA $(CudaVersion).targets" />
-    <Import Project="..\..\..\NugetPackages\OpenCV.2.4.10\build\native\OpenCV.targets" Condition="Exists('..\..\..\NugetPackages\OpenCV.2.4.10\build\native\OpenCV.targets')" />
     <Import Project="..\..\..\NugetPackages\OpenBLAS.0.2.14.1\build\native\openblas.targets" Condition="Exists('..\..\..\NugetPackages\OpenBLAS.0.2.14.1\build\native\openblas.targets')" />
     <Import Project="..\..\..\NugetPackages\hdf5-v120-complete.1.8.15.2\build\native\hdf5-v120.targets" Condition="Exists('..\..\..\NugetPackages\hdf5-v120-complete.1.8.15.2\build\native\hdf5-v120.targets')" />
     <Import Project="..\..\..\NugetPackages\boost.1.59.0.0\build\native\boost.targets" Condition="Exists('..\..\..\NugetPackages\boost.1.59.0.0\build\native\boost.targets')" />

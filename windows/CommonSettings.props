@@ -6,7 +6,7 @@
         <!--NOTE: CpuOnlyBuild and UseCuDNN flags can't be set at the same time.-->
         <CpuOnlyBuild>false</CpuOnlyBuild>
         <UseCuDNN>true</UseCuDNN>
-        <CudaVersion>8.0</CudaVersion>
+        <CudaVersion>7.5</CudaVersion>
         <!-- NOTE: If Python support is enabled, PythonDir (below) needs to be
          set to the root of your Python installation. If your Python installation
          does not contain debug libraries, debug build will not work. -->
@@ -18,7 +18,7 @@
 
         <!-- Set CUDA architecture suitable for your GPU.
          Setting proper architecture is important to mimize your run and compile time. -->
-        <CudaArchitecture>compute_61,sm_61</CudaArchitecture>
+        <CudaArchitecture>compute_52,sm_52</CudaArchitecture>
 
         <!-- CuDNN 4 and 5 are supported -->
         <CuDnnPath>c:/cudnnv5</CuDnnPath>
@@ -81,7 +81,8 @@
         <ClCompile>
             <MinimalRebuild>false</MinimalRebuild>
             <MultiProcessorCompilation>true</MultiProcessorCompilation>
-            <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;USE_OPENCV;USE_LEVELDB;USE_LMDB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+          <!-- USE_OPENCV;USE_LEVELDB;USE_LMDB; -->
+            <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
             <TreatWarningAsError>true</TreatWarningAsError>
         </ClCompile>
     </ItemDefinitionGroup>
