@@ -27,6 +27,7 @@ void BSCELossLayer<Dtype>::LayerSetUp(
   valid_num_ = 0;
   his_stat_.Reshape(bin_num_, 1, 1, 1);
   cls_stat_.Reshape(2, 1, 1, 1);
+  cls_grad_.Reshape(2, 1, 1, 1);
 
 }
 
@@ -43,6 +44,7 @@ void BSCELossLayer<Dtype>::Reshape(
   }
   for ( int i = 0; i < 2; i++ ){
 	  cls_stat_.mutable_cpu_data()[ i ] = 0;
+	  cls_grad_.mutable_cpu_data()[ i ] = 0;
   }
 }
 
@@ -92,16 +94,19 @@ void BSCELossLayer<Dtype>::Forward_cpu(
   }
 }
 template <typename Dtype>
-void BSCELossLayer<Dtype>::BSCE_statistics(const Dtype*bottom_diff, int count
+void BSCELossLayer<Dtype>::BSCE_statistics(const Dtype*bottom_diff, int count, const Dtype* target
 	) {
 	Dtype sums = 0.0;
 	for ( int i = 0; i < count; ++i )
 	{
 		his_stat_.mutable_cpu_data()[ (int)floor(fabs(bottom_diff[ i ]) * bin_num_) ] += (Dtype)( 1.0 );
-		sums += abs(bottom_diff[ i ]);
+		cls_grad_.mutable_cpu_data()[ (int)target[ i ] ] += fabs(bottom_diff[ i ]);
 	}
 	for ( int i = 0; i < bin_num_; ++i ){
 		his_stat_.mutable_cpu_data()[ i ] = count / ( bin_num_ * his_stat_.cpu_data()[ i ] );
+	}
+	for ( int i = 0; i < 2; ++i ){
+		cls_grad_.mutable_cpu_data()[ i ] = ( cls_grad_.mutable_cpu_data()[ 0 ] + cls_grad_.mutable_cpu_data()[ 1 ] ) / ( 2 * cls_grad_.mutable_cpu_data()[ i ] );
 	}
 }
 

@@ -99,7 +99,7 @@ class BSCELossLayer : public LossLayer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  void BSCE_statistics(const Dtype*bottom_diff, int count);
+  void BSCE_statistics(const Dtype*bottom_diff, int count, const Dtype* target);
   /// The internal SigmoidLayer used to map predictions to probabilities.
   shared_ptr<SigmoidLayer<Dtype> > sigmoid_layer_;
   /// sigmoid_output stores the output of the SigmoidLayer.
@@ -110,7 +110,7 @@ class BSCELossLayer : public LossLayer<Dtype> {
   vector<Blob<Dtype>*> sigmoid_top_vec_;
   bool has_ignore_label_;
   int ignore_label_, valid_num_;
-  Blob<Dtype> his_stat_, cls_stat_;
+  Blob<Dtype> his_stat_, cls_stat_, cls_grad_;
   bool b_cls_, b_his_;
   int bin_num_;
 };
