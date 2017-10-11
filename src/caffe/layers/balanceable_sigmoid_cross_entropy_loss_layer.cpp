@@ -9,6 +9,9 @@ template <typename Dtype>
 void BSCELossLayer<Dtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   LossLayer<Dtype>::LayerSetUp(bottom, top);
+  b_cls_ = this->layer_param().bsce_param().balance_cls();
+  b_his_ = this->layer_param().bsce_param().balance_his();
+  bin_num_ = this->layer_param().bsce_param().bin_num();
   sigmoid_bottom_vec_.clear();
   sigmoid_bottom_vec_.push_back(bottom[0]);
   sigmoid_top_vec_.clear();
@@ -22,7 +25,9 @@ void BSCELossLayer<Dtype>::LayerSetUp(
  else
   ignore_label_ = -1;
   valid_num_ = 0;
-  statistics_.Reshape(10, 1, 1, 1);
+  his_stat_.Reshape(bin_num_, 1, 1, 1);
+  cls_stat_.Reshape(2, 1, 1, 1);
+
 }
 
 template <typename Dtype>
@@ -33,8 +38,11 @@ void BSCELossLayer<Dtype>::Reshape(
       "SIGMOID_CROSS_ENTROPY_LOSS layer inputs must have the same count.";
   sigmoid_layer_->Reshape(sigmoid_bottom_vec_, sigmoid_top_vec_);
   valid_num_ = 0;
-  for ( int i = 0; i < 10; i++ ){
-	  statistics_.mutable_cpu_data()[ i ] = 0;
+  for ( int i = 0; i < bin_num_; i++ ){
+	  his_stat_.mutable_cpu_data()[ i ] = 0;
+  }
+  for ( int i = 0; i < 2; i++ ){
+	  cls_stat_.mutable_cpu_data()[ i ] = 0;
   }
 }
 
@@ -45,6 +53,8 @@ void BSCELossLayer<Dtype>::Forward_cpu(
 			top[ 0 ]->mutable_cpu_data()[ 0 ] = Dtype(0);
 			return;
 		}
+	cls_stat_.mutable_cpu_data()[ 1 ] = caffe_cpu_asum(bottom[ 1 ]->count(), bottom[ 1 ]->cpu_data());
+	cls_stat_.mutable_cpu_data()[ 0 ] = bottom[ 1 ]->count() - cls_stat_.cpu_data()[ 1 ];
   // The forward pass computes the sigmoid outputs.
   sigmoid_bottom_vec_[0] = bottom[0];
   sigmoid_layer_->Forward(sigmoid_bottom_vec_, sigmoid_top_vec_);
@@ -87,11 +97,11 @@ void BSCELossLayer<Dtype>::BSCE_statistics(const Dtype*bottom_diff, int count
 	Dtype sums = 0.0;
 	for ( int i = 0; i < count; ++i )
 	{
-		statistics_.mutable_cpu_data()[ (int)floor(abs(bottom_diff[ i ]) * 10) ] += (Dtype)( 1.0 );
+		his_stat_.mutable_cpu_data()[ (int)floor(fabs(bottom_diff[ i ]) * bin_num_) ] += (Dtype)( 1.0 );
 		sums += abs(bottom_diff[ i ]);
 	}
-	for ( int i = 0; i < 10; ++i ){
-		statistics_.mutable_cpu_data()[ i ] = count / ( 10 * statistics_.mutable_cpu_data()[ i ] );
+	for ( int i = 0; i < bin_num_; ++i ){
+		his_stat_.mutable_cpu_data()[ i ] = count / ( bin_num_ * his_stat_.cpu_data()[ i ] );
 	}
 }
 

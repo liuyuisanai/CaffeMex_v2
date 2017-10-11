@@ -78,8 +78,8 @@ namespace caffe {
 		int spatial_dim = diff_.height() * diff_.width();
 
 		Dtype pre_fixed_normalizer = this->layer_param_.loss_param().pre_fixed_normalizer();
-		top[0]->mutable_cpu_data()[0] = loss / get_normalizer(normalization_,
-			pre_fixed_normalizer);
+		top[0]->mutable_cpu_data()[0] = loss / (get_normalizer(normalization_,
+			pre_fixed_normalizer)+1e-6);
 
 		// Output per-instance loss
     if (top.size() >= 2) {
@@ -109,7 +109,14 @@ namespace caffe {
 	void SmoothL1LossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
 		int count = diff_.count();
-		if ( count < 1 ){
+		if ( has_weights_ ){
+			Dtype asum;
+			caffe_gpu_asum<Dtype>(count, bottom[ 2 ]->gpu_data(), &asum);
+			if ( asum < 1 )
+				return;
+		}
+		
+		if ( count < 1  ){
 			return;
 		}
 		SmoothL1BackwardGPU<Dtype> << <CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS >> >(

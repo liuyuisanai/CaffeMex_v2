@@ -110,7 +110,9 @@ class BSCELossLayer : public LossLayer<Dtype> {
   vector<Blob<Dtype>*> sigmoid_top_vec_;
   bool has_ignore_label_;
   int ignore_label_, valid_num_;
-  Blob<Dtype> statistics_;
+  Blob<Dtype> his_stat_, cls_stat_;
+  bool b_cls_, b_his_;
+  int bin_num_;
 };
 
 }  // namespace caffe

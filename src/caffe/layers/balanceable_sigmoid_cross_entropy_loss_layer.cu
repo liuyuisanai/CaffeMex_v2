@@ -8,9 +8,12 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void BSCE_scale_GPU(const int nthreads,
-	Dtype* bottom_diff, const Dtype* stat){
+	Dtype* bottom_diff, const Dtype* his_stat_, const Dtype* cls_stat_, const Dtype* target, int bin_num_, bool b_cls_, bool b_his_){
 	CUDA_KERNEL_LOOP(i, nthreads) {
-		bottom_diff[ i ] = bottom_diff[ i ] * stat[ (int)floorf(fabs(bottom_diff[ i ]) * 10) ];
+		if ( b_his_ )
+			bottom_diff[ i ] = bottom_diff[ i ] * his_stat_[ (int)floorf(fabs(bottom_diff[ i ]) * bin_num_) ];
+		if ( b_cls_ )
+			bottom_diff[ i ] = bottom_diff[ i ] * nthreads / 2.0 / cls_stat_[ (int)target[ i ] ];
 	}
 }
 
@@ -37,7 +40,7 @@ void BSCELossLayer<Dtype>::Backward_gpu(
     // Scale down gradient
 	const Dtype loss_weight = top[ 0 ]->cpu_diff()[ 0 ];
 	BSCE_scale_GPU<Dtype> << <CAFFE_GET_BLOCKS(count),
-		CAFFE_CUDA_NUM_THREADS >> >( count, bottom[ 0 ]->mutable_gpu_diff(), statistics_.gpu_data() );
+		CAFFE_CUDA_NUM_THREADS >> >( count, bottom[ 0 ]->mutable_gpu_diff(), his_stat_.gpu_data(), cls_stat_.gpu_data(), target, bin_num_, b_cls_, b_his_ );
 	CUDA_POST_KERNEL_CHECK;
 	caffe_gpu_scal(count, loss_weight / valid_num_, bottom[ 0 ]->mutable_gpu_diff());
   }

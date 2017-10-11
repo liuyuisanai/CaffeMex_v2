@@ -428,8 +428,14 @@ message LayerParameter {
   optional UnpoolingParameter unpooling_param = 12155;
   optional MarginInnerProductParameter margin_inner_product_param = 161;
   optional FocalLossParameter focal_loss_param = 10632;
+  optional BSCEParameter bsce_param = 10633;
 }
 
+message BSCEParameter {
+  optional bool balance_cls = 1 [default = true]; // The scale
+  optional bool balance_his = 2 [default = true]; // The exponent
+  optional float bin_num = 3 [default = 10];
+}
 
 message FocalLossParameter {
   optional float alpha = 1 [default = 0.25]; // The scale

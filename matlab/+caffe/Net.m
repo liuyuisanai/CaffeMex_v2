@@ -188,5 +188,18 @@ classdef Net < handle
       CHECK(ischar(weights_file), 'weights_file must be a string');
       caffe_('net_save', self.hNet_self, weights_file);
     end
+    function weight = get_weights(self)        
+      cnt = 1;
+      for i=1:size(self.layer_vec, 2)
+          if isempty(self.layer_vec(1,i).params)
+             continue 
+          end
+          weight{cnt,1} = self.layer_names{i,1};
+          for j=1:size(self.layer_vec(1,i).params, 2)
+              weight{cnt,2}{j,1} = self.layer_vec(1,i).params(1,j).get_data();
+          end
+          cnt = cnt + 1;
+      end
+    end
   end
 end
