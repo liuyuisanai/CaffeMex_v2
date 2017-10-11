@@ -103,10 +103,10 @@ void BSCELossLayer<Dtype>::BSCE_statistics(const Dtype*bottom_diff, int count, c
 		cls_grad_.mutable_cpu_data()[ (int)target[ i ] ] += fabs(bottom_diff[ i ]);
 	}
 	for ( int i = 0; i < bin_num_; ++i ){
-		his_stat_.mutable_cpu_data()[ i ] = count / ( bin_num_ * his_stat_.cpu_data()[ i ] );
+		his_stat_.mutable_cpu_data()[ i ] = count / ( bin_num_ * his_stat_.cpu_data()[ i ] + 1e-7);
 	}
 	for ( int i = 0; i < 2; ++i ){
-		cls_grad_.mutable_cpu_data()[ i ] = ( cls_grad_.mutable_cpu_data()[ 0 ] + cls_grad_.mutable_cpu_data()[ 1 ] ) / ( 2 * cls_grad_.mutable_cpu_data()[ i ] );
+		cls_grad_.mutable_cpu_data()[ i ] = ( cls_grad_.cpu_data()[ 0 ] + cls_grad_.cpu_data()[ 1 ] ) / ( 2 * cls_grad_.cpu_data()[ i ] + 1e-7 );
 	}
 }
 
