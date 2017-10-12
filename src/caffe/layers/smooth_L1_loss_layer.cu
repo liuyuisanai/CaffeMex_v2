@@ -78,8 +78,11 @@ namespace caffe {
 		int spatial_dim = diff_.height() * diff_.width();
 
 		Dtype pre_fixed_normalizer = this->layer_param_.loss_param().pre_fixed_normalizer();
-		top[0]->mutable_cpu_data()[0] = loss / (get_normalizer(normalization_,
-			pre_fixed_normalizer)+1e-6);
+		if ( has_weights_ )
+			top[ 0 ]->mutable_cpu_data()[ 0 ] = loss / ( valid_num_ + 1e-6 );
+		else
+			top[0]->mutable_cpu_data()[0] = loss / (get_normalizer(normalization_,
+				pre_fixed_normalizer)+1e-6);
 
 		// Output per-instance loss
     if (top.size() >= 2) {
