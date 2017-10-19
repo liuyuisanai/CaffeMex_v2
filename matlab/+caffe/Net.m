@@ -201,5 +201,12 @@ classdef Net < handle
           cnt = cnt + 1;
       end
     end
+    function featmaps = get_featmaps(self)
+        featmaps = cell(length(self.blob_names), 2);
+        for i=1:length(self.blob_names)
+            featmaps{i,1} = self.blob_names{i,1};
+            featmaps{i,2} = self.blob_vec(i).get_data();
+        end
+    end
   end
 end

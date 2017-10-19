@@ -5,7 +5,7 @@
         <BuildDir>$(SolutionDir)..\Build</BuildDir>
         <!--NOTE: CpuOnlyBuild and UseCuDNN flags can't be set at the same time.-->
         <CpuOnlyBuild>false</CpuOnlyBuild>
-        <UseCuDNN>true</UseCuDNN>
+        <UseCuDNN>false</UseCuDNN>
         <CudaVersion>7.5</CudaVersion>
         <!-- NOTE: If Python support is enabled, PythonDir (below) needs to be
          set to the root of your Python installation. If your Python installation
