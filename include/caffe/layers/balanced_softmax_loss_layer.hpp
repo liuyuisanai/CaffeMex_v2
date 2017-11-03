@@ -106,7 +106,7 @@ class BSMLossLayer : public LossLayer<Dtype> {
   /// all outputs are assumed to be valid.
   virtual Dtype get_normalizer(
       LossParameter_NormalizationMode normalization_mode, int valid_count);
-  void BSMLossLayer<Dtype>::BSM_statistics(const Dtype*bottom_diff, int count);
+  void BSM_statistics(const Dtype*bottom_diff, int count);
   /// The internal SoftmaxLayer used to map predictions to a distribution.
   shared_ptr<Layer<Dtype> > softmax_layer_;
   /// prob stores the output probability predictions from the SoftmaxLayer.
